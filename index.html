@@ -1,9 +1,10 @@
 <!doctype html>
+<!-- Beatdle V2.0 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Beatdle (V1.8)</title>
+<title>Beatdle</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700;800&display=swap">
 <style>
 :root{--bg:#eef1ff;--ink:#14173a;--mute:#5a638f;--card:#ffffff;--pad:#ffc414;--padink:#14173a;--ok:#0a8f7a;--bad:#d6334f;
@@ -23,9 +24,13 @@ button{font:inherit;cursor:pointer;border:0;border-radius:14px;padding:14px 22px
 button.ghost{background:transparent;color:var(--mute);font-weight:500}
 button:disabled{opacity:.35;cursor:default}
 button:focus-visible,#pad:focus-visible{outline:3px solid var(--ok);outline-offset:3px}
-#pad{display:block;margin:22px auto;width:min(72vw,300px);aspect-ratio:1;border-radius:50%;background:var(--pad);color:var(--padink);font-size:1.4rem;font-weight:800;touch-action:manipulation;user-select:none;-webkit-user-select:none;transition:transform .08s}
+#pad{display:flex;align-items:center;justify-content:center;margin:22px auto;width:min(72vw,300px);aspect-ratio:1;border-radius:50%;--fill:0%;background:conic-gradient(var(--pad) var(--fill),color-mix(in srgb,var(--pad) 22%,var(--card)) 0);border:3px solid color-mix(in srgb,var(--pad) 55%,transparent);color:var(--ink);font-size:1.6rem;font-weight:800;letter-spacing:.04em;touch-action:manipulation;user-select:none;-webkit-user-select:none;transition:transform .08s,color .12s}
+#pad.filled{color:var(--padink)}
 #pad.hit{transform:scale(.94)}
-#pad .big{display:block;font-size:4rem;line-height:1}
+#pad .big{display:block;font-size:4rem;line-height:1;letter-spacing:0}
+#pad .prompt{display:block;max-width:76%;margin:0 auto;font-size:1.35rem;line-height:1.25;letter-spacing:0}
+.sharebtn{display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.sharebtn svg{width:18px;height:18px;flex:none}
 .row{display:flex;gap:10px;justify-content:center}
 .truth{font-size:5rem;font-weight:800;line-height:1;margin:14px 0 2px;color:var(--ok)}
 table{width:100%;border-collapse:collapse;margin:18px 0;text-align:left}
@@ -58,12 +63,23 @@ pre{white-space:pre-wrap;word-break:break-all;background:var(--card);border-radi
 .bar{background:var(--mute);color:var(--bg);border-radius:8px;padding:3px 8px;font-weight:700;text-align:right}
 .bar.hi{background:var(--ok)}
 
+
+.sfxbox{margin:16px auto 0;max-width:300px;display:flex;flex-direction:column;gap:10px}
+.sfxrow{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--card);border:1px solid color-mix(in srgb,var(--mute) 25%,transparent);border-radius:14px;padding:10px 14px;text-align:left}
+.sfxlabel{font-weight:700;font-size:.98rem;color:var(--ink)}
+.swbtn{position:relative;display:inline-flex;align-items:center;gap:8px;padding:6px 12px 6px 8px;border-radius:999px;background:color-mix(in srgb,var(--mute) 22%,var(--card));color:var(--mute);font-size:.82rem;font-weight:800;letter-spacing:.03em;border:2px solid color-mix(in srgb,var(--mute) 35%,transparent);transition:background .15s,color .15s,border-color .15s}
+.swbtn .knob{width:18px;height:18px;border-radius:50%;background:var(--mute);transition:transform .15s,background .15s}
+.swbtn[aria-checked="true"]{background:var(--ok);color:#ffffff;border-color:var(--ok);flex-direction:row-reverse;padding:6px 8px 6px 12px}
+.swbtn[aria-checked="true"] .knob{background:#ffffff}
+.sfxselect{width:100%;font:inherit;font-size:.98rem;font-weight:700;padding:11px 14px;border-radius:14px;border:2px solid color-mix(in srgb,var(--mute) 35%,transparent);background:var(--card);color:var(--ink);cursor:pointer}
+.sfxselect:focus-visible{outline:3px solid var(--ok);outline-offset:2px}
+
 </style>
 </head>
 <body>
 <main>
   <section id="start">
-    <h1>Beatdle <span style="font-size:.45em;font-weight:500;color:var(--mute);white-space:nowrap">(V1.8)</span></h1>
+    <h1>Beatdle</h1>
     
     <p id="todayinfo" style="margin:0 0 14px"></p>
     <pre id="menushare" hidden></pre>
@@ -78,13 +94,27 @@ pre{white-space:pre-wrap;word-break:break-all;background:var(--card);border-radi
     <div class="meta" id="rnd"></div>
     <h2 id="title"></h2>
     <div class="meta" id="artist"></div>
-    <button id="pad" aria-label="Tap the beat"><span id="padtxt">Tap</span></button>
+    <button id="pad" aria-label="Tap the beat"><span id="padtxt"><span class="prompt">Tap your tempo guess here!</span></span></button>
     <div class="row">
       <button class="ghost" id="reset">Start over</button>
       <button id="lock" disabled>Lock in</button>
     </div>
     <div class="meta">Tap at least 4 times. You can also press the space bar.</div>
-    <div style="margin:2.8em 0 .4em"><button class="ghost" id="menu">Menu</button></div>
+    <div class="sfxbox" id="sfxbox">
+      <div class="sfxrow">
+        <span class="sfxlabel">Sound effect</span>
+        <button type="button" class="swbtn" id="sfxToggle" role="switch" aria-checked="false" aria-label="Sound effect">
+          <span class="knob" aria-hidden="true"></span>
+          <span id="sfxStateTxt">OFF</span>
+        </button>
+      </div>
+      <select class="sfxselect" id="sfxInstrument" aria-label="Sound effect instrument" hidden>
+        <option value="Bass Drum" selected>Bass Drum</option>
+        <option value="HH Cymbal">HH Cymbal</option>
+        <option value="Cow bell">Cow bell</option>
+      </select>
+    </div>
+    <div style="margin:2em 0 .4em"><button class="ghost" id="menu">Menu</button></div>
   </section>
 
   <section id="reveal" hidden>
@@ -100,11 +130,11 @@ pre{white-space:pre-wrap;word-break:break-all;background:var(--card);border-radi
     <table id="ftable"></table>
     <h2 id="sharetitle" style="font-size:1.3rem;margin:24px 0 8px"></h2>
     <pre id="share" style="margin-top:0"></pre>
-    <div class="row"><button id="copy">Copy score</button></div>
+    <div class="row"><button id="copy" class="sharebtn"><span>Share</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></button></div>
     <div id="statsbox"></div>
     <div style="margin:2.8em 0 .4em"><button class="ghost" id="again">Menu</button></div>
   </section>
-<p class="meta" style="margin-top:36px">Developed by John Hymmen</p>
+<p class="meta" style="margin-top:36px">Developed by John Hymmen<br>Copyright 2026–2027</p>
 </main>
 <script>
 const SONGS=[
@@ -164,7 +194,7 @@ function startGame(n){
   nextRound();
 }
 function nextRound(){
-  cur=order[round];taps=[];
+  stopAutoTempo();cur=order[round];taps=[];
   $("rnd").textContent="Game #"+gameNo+", round "+(round+1)+" of "+ROUNDS;
   $("title").textContent=cur[0];$("artist").textContent=cur[1];
   updatePad();show("play");
@@ -175,19 +205,97 @@ function currentBpm(){
   return 60000/((t[t.length-1]-t[0])/(t.length-1));
 }
 function updatePad(){
-  const b=currentBpm();
-  $("padtxt").innerHTML=b?'<span class="big">'+Math.round(b)+'</span>BPM':(taps.length?'<span class="big">'+taps.length+'</span>keep going':"Tap");
+  const b=currentBpm(),pad=$("pad"),pctFill=Math.min(100,taps.length*25);
+  pad.style.setProperty("--fill",pctFill+"%");
+  pad.classList.toggle("filled",pctFill>=50);
+  $("padtxt").innerHTML=b?'<span class="big">'+Math.round(b)+'</span>BPM':'<span class="prompt">Tap your tempo guess here!</span>';
   $("lock").disabled=!b;
 }
+let autoStartTimer=null,autoBeatTimer=null,autoBeatInterval=0;
+function stopAutoTempo(){
+  if(autoStartTimer){clearTimeout(autoStartTimer);autoStartTimer=null}
+  if(autoBeatTimer){clearInterval(autoBeatTimer);autoBeatTimer=null}
+  autoBeatInterval=0;
+}
+function playAutoBeat(){
+  if($("play").hidden||!currentBpm())return stopAutoTempo();
+  if(data.sfxEnabled)playSfx(data.sfxInstrument||"Bass Drum");
+}
+function scheduleAutoTempo(){
+  stopAutoTempo();
+  const b=currentBpm();
+  if(!b||$("play").hidden)return;
+  const interval=60000/b;
+  autoBeatInterval=interval;
+  // Wait 1 beat interval in silence after last tap; on the next beat (2x interval), start automated tempo playback
+  autoStartTimer=setTimeout(()=>{
+    autoStartTimer=null;
+    if($("play").hidden||!currentBpm())return;
+    playAutoBeat();
+    autoBeatTimer=setInterval(playAutoBeat,interval);
+  },interval*2);
+}
 function tap(){
+  stopAutoTempo();
   const now=performance.now();
   if(taps.length&&now-taps[taps.length-1]>2500)taps=[];
   taps.push(now);
+  if(data.sfxEnabled)playSfx(data.sfxInstrument||"Bass Drum");
   $("pad").classList.add("hit");setTimeout(()=>$("pad").classList.remove("hit"),80);
   updatePad();
+  if(currentBpm())scheduleAutoTempo();
+}
+let audioCtx=null;
+function getAudioCtx(){
+  const Ctx=window.AudioContext||window.webkitAudioContext;
+  if(!Ctx)return null;
+  if(!audioCtx)audioCtx=new Ctx();
+  if(audioCtx.state==="suspended")audioCtx.resume().catch(()=>{});
+  return audioCtx;
+}
+function playSfx(inst){
+  const ctx=getAudioCtx();
+  if(!ctx)return;
+  const now=ctx.currentTime;
+  if(inst==="HH Cymbal"){
+    const len=Math.floor(ctx.sampleRate*0.08);
+    const buf=ctx.createBuffer(1,len,ctx.sampleRate);
+    const ch=buf.getChannelData(0);
+    for(let i=0;i<len;i++)ch[i]=(Math.random()*2-1)*Math.pow(1-i/len,2.4);
+    const src=ctx.createBufferSource();src.buffer=buf;
+    const hp=ctx.createBiquadFilter();hp.type="highpass";hp.frequency.setValueAtTime(6800,now);
+    const g=ctx.createGain();g.gain.setValueAtTime(0.28,now);g.gain.exponentialRampToValueAtTime(0.001,now+0.075);
+    src.connect(hp);hp.connect(g);g.connect(ctx.destination);
+    src.start(now);src.stop(now+0.08);
+  }else if(inst==="Cow bell"){
+    const freqs=[540,810];
+    const bp=ctx.createBiquadFilter();bp.type="bandpass";bp.frequency.setValueAtTime(680,now);bp.Q.setValueAtTime(3.5,now);
+    const g=ctx.createGain();g.gain.setValueAtTime(0.25,now);g.gain.exponentialRampToValueAtTime(0.001,now+0.24);
+    bp.connect(g);g.connect(ctx.destination);
+    freqs.forEach(f=>{
+      const osc=ctx.createOscillator();osc.type="square";osc.frequency.setValueAtTime(f,now);
+      osc.connect(bp);osc.start(now);osc.stop(now+0.25);
+    });
+  }else{
+    const osc=ctx.createOscillator();osc.type="sine";
+    osc.frequency.setValueAtTime(145,now);osc.frequency.exponentialRampToValueAtTime(42,now+0.16);
+    const g=ctx.createGain();g.gain.setValueAtTime(0.55,now);g.gain.exponentialRampToValueAtTime(0.001,now+0.18);
+    osc.connect(g);g.connect(ctx.destination);
+    osc.start(now);osc.stop(now+0.19);
+  }
 }
 const KEY="beatdle.v1";
-let data={games:{},daily:{}};
+const VALID_SFX=["Bass Drum","HH Cymbal","Cow bell"];
+let data={games:{},daily:{},sfxEnabled:false,sfxInstrument:"Bass Drum"};
+function syncSfxUi(){
+  const on=!!data.sfxEnabled;
+  const inst=VALID_SFX.includes(data.sfxInstrument)?data.sfxInstrument:"Bass Drum";
+  data.sfxInstrument=inst;
+  const btn=$("sfxToggle"),sel=$("sfxInstrument"),st=$("sfxStateTxt");
+  if(btn){btn.setAttribute("aria-checked",on?"true":"false")}
+  if(st){st.textContent=on?"ON":"OFF"}
+  if(sel){sel.value=inst;sel.hidden=!on}
+}
 function load(){
   try{
     const r=localStorage.getItem(KEY);
@@ -197,10 +305,13 @@ function load(){
         const g=d.games&&typeof d.games==="object"?Object.assign({},d.games):{};
         if(d.archive&&typeof d.archive==="object")Object.keys(d.archive).forEach(k=>{if(!g[k])g[k]=d.archive[k]});
         if(d.daily&&typeof d.daily==="object")Object.keys(d.daily).forEach(k=>{g[k]=d.daily[k]});
-        data={games:g,daily:d.daily&&typeof d.daily==="object"?Object.assign({},d.daily):{}};
+        const sfxOn=typeof d.sfxEnabled==="boolean"?d.sfxEnabled:false;
+        const sfxInst=VALID_SFX.includes(d.sfxInstrument)?d.sfxInstrument:"Bass Drum";
+        data={games:g,daily:d.daily&&typeof d.daily==="object"?Object.assign({},d.daily):{},sfxEnabled:sfxOn,sfxInstrument:sfxInst};
       }
     }
   }catch(e){}
+  syncSfxUi();
 }
 function save(){try{localStorage.setItem(KEY,JSON.stringify(data))}catch(e){}}
 function record(n,daily,total,pts){
@@ -236,6 +347,7 @@ function buildStart(){
 }
 function showStart(){buildStart();show("start")}
 function lockIn(){
+  stopAutoTempo();
   const truth=cur[2],g=Math.round(currentBpm()),r=match(g,truth),e=pct(g,truth),p=points(g,truth);
   total+=p;roundPts.push(p);
   $("rtitle").textContent=cur[0]+" — "+cur[1];
@@ -254,16 +366,37 @@ function finish(){
   $("sharetitle").textContent=isDaily?"Today’s score":"First attempt score";
   buildStats(isFirst);
   $("share").textContent=shareText(gameNo,firstRec.score,firstRec.pts||roundPts);
-  $("copy").textContent="Copy score";
+  setBtnLabel($("copy"),"Share");
   show("final");
 }
-$("go").onclick=()=>{if(data.daily[todayNo()])copyFrom($("menushare"),$("go"));else startGame(todayNo())};
+function setBtnLabel(btn,txt){const s=btn.querySelector("span");if(s)s.textContent=txt;else btn.textContent=txt}
+$("go").onclick=()=>{if(data.daily[todayNo()])shareFrom($("menushare"),$("go"));else startGame(todayNo())};
 $("replay").onclick=()=>startGame(todayNo());
 
 
-async function copyFrom(pre,btn){const t=pre.textContent;try{await navigator.clipboard.writeText(t);btn.textContent="Copied"}catch(e){const r=document.createRange();r.selectNodeContents(pre);const g=getSelection();g.removeAllRanges();g.addRange(r);let ok=false;try{ok=document.execCommand("copy")}catch(e2){}btn.textContent=ok?"Copied":"Select and copy the text above"}}
-$("copy").onclick=()=>copyFrom($("share"),$("copy"));
-$("menu").onclick=showStart;
+function isDesktopOrLaptop(){
+  const mobileUa=/Android|iPhone|iPad|iPod|Mobi/i.test(navigator.userAgent||"");
+  const hasFineHover=window.matchMedia&&window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+  return !mobileUa && !!hasFineHover;
+}
+async function shareFrom(pre,btn){
+  const t=pre.textContent;
+  if(!isDesktopOrLaptop()&&navigator.share){
+    try{await navigator.share({text:t});return}catch(e){if(e&&e.name==="AbortError")return}
+  }
+  const orig=btn.querySelector("span")?btn.querySelector("span").textContent:btn.textContent;
+  try{
+    await navigator.clipboard.writeText(t);
+    setBtnLabel(btn,"Copied");
+    setTimeout(()=>setBtnLabel(btn,orig),2000);
+  }catch(e){
+    const r=document.createRange();r.selectNodeContents(pre);const g=getSelection();g.removeAllRanges();g.addRange(r);
+    let ok=false;try{ok=document.execCommand("copy")}catch(e2){}
+    setBtnLabel(btn,ok?"Copied":"Select and copy the text above");
+  }
+}
+$("copy").onclick=()=>shareFrom($("share"),$("copy"));
+$("menu").onclick=()=>{stopAutoTempo();showStart()};
 let calY=new Date().getFullYear(),calM=new Date().getMonth();
 function buildArchive(){
   const t=todayNo(),td=new Date(),ty=td.getFullYear(),tm=td.getMonth(),box=$('archive');
@@ -285,8 +418,24 @@ function buildArchive(){
 load();if(data.daily[todayNo()])showStart();else startGame(todayNo());
 
 $("again").onclick=showStart;
+$("sfxToggle").onclick=()=>{
+  data.sfxEnabled=!data.sfxEnabled;
+  if(data.sfxEnabled){
+    getAudioCtx();
+    if(!$("play").hidden&&currentBpm()&&!autoStartTimer&&!autoBeatTimer)scheduleAutoTempo();
+  }else{
+    stopAutoTempo();
+  }
+  syncSfxUi();
+  save();
+};
+$("sfxInstrument").onchange=()=>{
+  data.sfxInstrument=$("sfxInstrument").value;
+  syncSfxUi();
+  save();
+};
 $("pad").addEventListener("pointerdown",e=>{e.preventDefault();tap()});
-$("reset").onclick=()=>{taps=[];updatePad()};
+$("reset").onclick=()=>{stopAutoTempo();taps=[];updatePad()};
 $("lock").onclick=lockIn;
 $("nextbtn").onclick=()=>{round++;round<ROUNDS?nextRound():finish()};
 document.addEventListener("keydown",e=>{
