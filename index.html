@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- Beatdle V2.1 -->
+<!-- Beatdle V2.4 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -128,6 +128,7 @@ pre{white-space:pre-wrap;word-break:break-all;background:var(--card);border-radi
   <section id="final" hidden>
     <h1 style="margin-top:8vh" id="winner"></h1>
     <table id="ftable"></table>
+    <p id="replaynote" hidden style="margin:-6px 0 16px;font-size:.92rem"></p>
     <h2 id="sharetitle" style="font-size:1.3rem;margin:24px 0 8px"></h2>
     <pre id="share" style="margin-top:0"></pre>
     <div class="row"><button id="copy" class="sharebtn"><span>Share</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></button></div>
@@ -401,7 +402,6 @@ function buildStats(isFirst){
     s.dist.forEach((c,i)=>{h+='<span>'+labels[i]+'</span>'+(c?'<div class="bar'+(i===hi?' hi':'')+'" style="width:'+Math.max(8,Math.round(100*c/mx))+'%">'+c+'</div>':'<span>0</span>')});
     h+='</div>';
   }
-  if(!isFirst)h+='<p style="margin-top:14px">Replay: only your first attempt ('+data.games[gameNo].score+'/500) counts toward stats.</p>';
   $("statsbox").innerHTML=h;
 }
 function shareText(n,t,pts){return "Beatdle #"+n+": "+t+"/"+ROUNDS*100+"\n"+pts.map(p=>p>=80?"🟩":p>=40?"🟨":"🟥").join("")+"\n"+SITE_URL}
@@ -431,7 +431,19 @@ function finish(){
   const firstRec=data.games[gameNo];
   const sq=p=>p>=80?"🟩":p>=40?"🟨":"🟥";
   $("winner").textContent="Game #"+gameNo+(isFirst?" complete":" replayed");
-  $("ftable").innerHTML="<tr><th>Round</th><th>Score</th></tr>"+roundPts.map((p,i)=>"<tr><td>Round "+(i+1)+"</td><td>"+p+" "+sq(p)+"</td></tr>").join("")+'<tr class="me"><td>Your total</td><td>'+total+"</td></tr>";
+  if(isFirst){
+    $("ftable").innerHTML="<tr><th>Round</th><th>Score</th></tr>"+roundPts.map((p,i)=>"<tr><td>Round "+(i+1)+"</td><td>"+p+" "+sq(p)+"</td></tr>").join("")+'<tr class="me"><td>Your total</td><td>'+total+"</td></tr>";
+    $("replaynote").hidden=true;
+    $("replaynote").textContent="";
+  }else{
+    const firstPts=Array.isArray(firstRec.pts)&&firstRec.pts.length===ROUNDS?firstRec.pts:roundPts;
+    $("ftable").innerHTML="<tr><th>Round</th><th>Today’s Score</th><th>Replay Score</th></tr>"+roundPts.map((p,i)=>{
+      const fp=firstPts[i];
+      return "<tr><td>Round "+(i+1)+"</td><td>"+fp+" "+sq(fp)+"</td><td>"+p+" "+sq(p)+"</td></tr>";
+    }).join("")+'<tr class="me"><td>Your total</td><td>'+firstRec.score+"</td><td>"+total+"</td></tr>";
+    $("replaynote").textContent="Replay Note: Your first attempt is what counts for stats and sharing. Replays are just for fun.";
+    $("replaynote").hidden=false;
+  }
   $("sharetitle").textContent=isDaily?"Today’s score":"First attempt score";
   buildStats(isFirst);
   $("share").textContent=shareText(gameNo,firstRec.score,firstRec.pts||roundPts);
