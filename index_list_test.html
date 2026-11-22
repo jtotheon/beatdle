@@ -1,0 +1,467 @@
+<!doctype html>
+<!-- Beatdle V2.1 -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Beatdle</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700;800&display=swap">
+<style>
+:root{--bg:#eef1ff;--ink:#14173a;--mute:#5a638f;--card:#ffffff;--pad:#ffc414;--padink:#14173a;--ok:#0a8f7a;--bad:#d6334f;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#101a3d;--ink:#f5f7ff;--mute:#9aa4d8;--card:#1a2552;--pad:#ffd23f;--padink:#101a3d;--ok:#3fe0c5;--bad:#ff7a90;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#101a3d;--ink:#f5f7ff;--mute:#9aa4d8;--card:#1a2552;--pad:#ffd23f;--padink:#101a3d;--ok:#3fe0c5;--bad:#ff7a90;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Bricolage Grotesque",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;min-height:100vh;display:flex;justify-content:center}
+main{width:100%;max-width:440px;padding:20px 20px 32px;text-align:center}
+[hidden]{display:none!important}
+h1{font-size:2.6rem;line-height:1.05;margin:12vh 0 12px;font-weight:800}
+h2{font-size:1.9rem;margin:6px 0 2px;font-weight:800;line-height:1.15}
+p{color:var(--mute);margin:0 0 16px;line-height:1.45}
+.meta{color:var(--mute);font-size:.95rem;margin-top:8px}
+button{font:inherit;cursor:pointer;border:0;border-radius:14px;padding:14px 22px;font-weight:700;font-size:1.05rem;background:var(--ink);color:var(--bg)}
+button.ghost{background:transparent;color:var(--mute);font-weight:500}
+button:disabled{opacity:.35;cursor:default}
+button:focus-visible,#pad:focus-visible{outline:3px solid var(--ok);outline-offset:3px}
+#pad{display:flex;align-items:center;justify-content:center;margin:22px auto;width:min(72vw,300px);aspect-ratio:1;border-radius:50%;--fill:0%;background:conic-gradient(var(--pad) var(--fill),color-mix(in srgb,var(--pad) 22%,var(--card)) 0);border:3px solid color-mix(in srgb,var(--pad) 55%,transparent);color:var(--ink);font-size:1.6rem;font-weight:800;letter-spacing:.04em;touch-action:manipulation;user-select:none;-webkit-user-select:none;transition:transform .08s,color .12s}
+#pad.filled{color:var(--padink)}
+#pad.hit{transform:scale(.94)}
+#pad .big{display:block;font-size:4rem;line-height:1;letter-spacing:0}
+#pad .prompt{display:block;max-width:76%;margin:0 auto;font-size:1.35rem;line-height:1.25;letter-spacing:0}
+.sharebtn{display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.sharebtn svg{width:18px;height:18px;flex:none}
+.row{display:flex;gap:10px;justify-content:center}
+.truth{font-size:5rem;font-weight:800;line-height:1;margin:14px 0 2px;color:var(--ok)}
+table{width:100%;border-collapse:collapse;margin:18px 0;text-align:left}
+td,th{padding:10px 8px;border-bottom:1px solid color-mix(in srgb,var(--mute) 30%,transparent);font-weight:500}
+th{color:var(--mute);font-size:.85rem}
+td:nth-child(n+2),th:nth-child(n+2){text-align:right}
+tr.me td{font-weight:800;color:var(--ok)}
+tr.me.mid td{color:#a86f00}
+tr.me.low td{color:var(--bad)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) tr.me.mid td{color:#ffd23f}}
+:root[data-theme="dark"] tr.me.mid td{color:#ffd23f}
+input{font:inherit;width:9em;padding:12px 14px;border-radius:14px;border:2px solid color-mix(in srgb,var(--mute) 40%,transparent);background:var(--card);color:var(--ink);text-align:center}
+pre{white-space:pre-wrap;word-break:break-all;background:var(--card);border-radius:14px;padding:14px;text-align:left;font:inherit;font-size:.95rem;margin:16px 0}
+.calhead{display:flex;align-items:center;justify-content:space-between;margin:10px 0}
+.calhead button{padding:8px 16px;font-size:1.4rem}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.cal i{font-style:normal;color:var(--mute);font-size:.8rem}
+.cal button{padding:8px 0;border-radius:12px;background:var(--card);color:var(--ink);font-weight:700;font-size:1rem;line-height:1.1}
+.cal button small{display:block;font-size:.65rem;font-weight:500;color:var(--mute)}
+.cal button.today{background:var(--pad);color:var(--padink)}
+.cal button.today small{color:var(--padink)}
+.cal .off{padding:8px 0;color:var(--mute);opacity:.35}
+.cal button.played small{color:var(--ok)}
+.cal button.today.played small{color:var(--padink)}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0 16px}
+.stat{background:var(--card);border-radius:14px;padding:12px 6px}
+.stat b{display:block;font-size:1.6rem;line-height:1.1}
+.stat span{font-size:.75rem;color:var(--mute)}
+.dist{display:grid;grid-template-columns:auto 1fr;gap:6px 10px;align-items:center;text-align:left;font-size:.85rem;color:var(--mute)}
+.bar{background:var(--mute);color:var(--bg);border-radius:8px;padding:3px 8px;font-weight:700;text-align:right}
+.bar.hi{background:var(--ok)}
+
+
+.sfxbox{margin:16px auto 0;max-width:300px;display:flex;flex-direction:column;gap:10px}
+.sfxrow{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--card);border:1px solid color-mix(in srgb,var(--mute) 25%,transparent);border-radius:14px;padding:10px 14px;text-align:left}
+.sfxlabel{font-weight:700;font-size:.98rem;color:var(--ink)}
+.swbtn{position:relative;display:inline-flex;align-items:center;gap:8px;padding:6px 12px 6px 8px;border-radius:999px;background:color-mix(in srgb,var(--mute) 22%,var(--card));color:var(--mute);font-size:.82rem;font-weight:800;letter-spacing:.03em;border:2px solid color-mix(in srgb,var(--mute) 35%,transparent);transition:background .15s,color .15s,border-color .15s}
+.swbtn .knob{width:18px;height:18px;border-radius:50%;background:var(--mute);transition:transform .15s,background .15s}
+.swbtn[aria-checked="true"]{background:var(--ok);color:#ffffff;border-color:var(--ok);flex-direction:row-reverse;padding:6px 8px 6px 12px}
+.swbtn[aria-checked="true"] .knob{background:#ffffff}
+.sfxselect{width:100%;font:inherit;font-size:.98rem;font-weight:700;padding:11px 14px;border-radius:14px;border:2px solid color-mix(in srgb,var(--mute) 35%,transparent);background:var(--card);color:var(--ink);cursor:pointer}
+.sfxselect:focus-visible{outline:3px solid var(--ok);outline-offset:2px}
+
+</style>
+</head>
+<body>
+<main>
+  <section id="start">
+    <h1>Beatdle</h1>
+    
+    <p id="todayinfo" style="margin:0 0 14px"></p>
+    <pre id="menushare" hidden></pre>
+    <div class="row" style="flex-wrap:wrap"><button id="go">Today’s game</button><button class="ghost" id="replay" hidden>Replay today’s game</button></div>
+    
+    
+    <h2 style="margin-top:32px;font-size:1.3rem">Archive</h2>
+    <div id="archive"></div>
+  </section>
+
+  <section id="play" hidden>
+    <div class="meta" id="rnd"></div>
+    <h2 id="title"></h2>
+    <div class="meta" id="artist"></div>
+    <button id="pad" aria-label="Tap the beat"><span id="padtxt"><span class="prompt">Tap your tempo guess here!</span></span></button>
+    <div class="row">
+      <button class="ghost" id="reset">Start over</button>
+      <button id="lock" disabled>Lock in</button>
+    </div>
+    <div class="meta">Tap at least 4 times. You can also press the space bar.</div>
+    <div class="sfxbox" id="sfxbox">
+      <div class="sfxrow">
+        <span class="sfxlabel">Sound effect</span>
+        <button type="button" class="swbtn" id="sfxToggle" role="switch" aria-checked="false" aria-label="Sound effect">
+          <span class="knob" aria-hidden="true"></span>
+          <span id="sfxStateTxt">OFF</span>
+        </button>
+      </div>
+      <select class="sfxselect" id="sfxInstrument" aria-label="Sound effect instrument" hidden>
+        <option value="Bass Drum" selected>Bass Drum</option>
+        <option value="HH Cymbal">HH Cymbal</option>
+        <option value="Cow bell">Cow bell</option>
+      </select>
+    </div>
+    <div style="margin:2em 0 .4em"><button class="ghost" id="menu">Menu</button></div>
+  </section>
+
+  <section id="reveal" hidden>
+    <div class="meta" id="rtitle"></div>
+    <div class="truth" id="truth"></div>
+    <div class="meta">beats per minute</div>
+    <table id="rtable"></table>
+    <button id="nextbtn">Next round</button>
+  </section>
+
+  <section id="final" hidden>
+    <h1 style="margin-top:8vh" id="winner"></h1>
+    <table id="ftable"></table>
+    <h2 id="sharetitle" style="font-size:1.3rem;margin:24px 0 8px"></h2>
+    <pre id="share" style="margin-top:0"></pre>
+    <div class="row"><button id="copy" class="sharebtn"><span>Share</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></button></div>
+    <div id="statsbox"></div>
+    <div style="margin:2.8em 0 .4em"><button class="ghost" id="again">Menu</button></div>
+  </section>
+<p class="meta" style="margin-top:36px">Developed by John Hymmen<br>Copyright 2026–2027</p>
+</main>
+<script>
+const SONGS=[
+["Party Rock Anthem","LMFAO",130],["Flowers","Miley Cyrus",118],["No Surprises","Radiohead",77],
+["Since U Been Gone","Kelly Clarkson",131],["Karma Police","Radiohead",76],["Last Nite","The Strokes",105],
+["Crazy in Love","Beyoncé",99],["Creep","Radiohead",92],["Since U Been Gone","Kelly Clarkson",131],
+["Every Breath You Take","The Police",117],["I Will Survive","Gloria Gaynor",117],["Watermelon Sugar","Harry Styles",95],
+["Alive","Pearl Jam",76],["Levitating","Dua Lipa",103],["No Surprises","Radiohead",77],
+["Sex on Fire","Kings of Leon",153],["Every Breath You Take","The Police",117],["Africa","Toto",93],
+["Hotel California","Eagles",74],["Take Me Home, Country Roads","John Denver",82],["Creep","Radiohead",92],
+["Macarena","Los del Río",103],["Satisfaction","The Rolling Stones",136],["Uprising","Muse",128],
+["Take Me Home, Country Roads","John Denver",82],["Another Brick in the Wall, Pt. 2","Pink Floyd",104],["Sex on Fire","Kings of Leon",153],
+["Satisfaction","The Rolling Stones",136],["Party Rock Anthem","LMFAO",130],["Shut Up and Dance","Walk the Moon",128],
+["Billie Jean","Michael Jackson",117],["Stayin' Alive","Bee Gees",104],["Uptown Funk","Mark Ronson ft. Bruno Mars",115],
+["Smells Like Teen Spirit","Nirvana",117],["Dancing Queen","ABBA",101],["Rolling in the Deep","Adele",105],
+["Shape of You","Ed Sheeran",96],["Happy","Pharrell Williams",160],["Another One Bites the Dust","Queen",110],
+["Sweet Child O' Mine","Guns N' Roses",125],["Don't Stop Believin'","Journey",119],["Superstition","Stevie Wonder",100],
+["Despacito","Luis Fonsi",89],["Mr. Brightside","The Killers",148],["Take On Me","a-ha",169],
+["Girls Just Want to Have Fun","Cyndi Lauper",120],["Seven Nation Army","The White Stripes",124],["Wonderwall","Oasis",87],
+["Livin' on a Prayer","Bon Jovi",123],["September","Earth, Wind & Fire",126],["Thriller","Michael Jackson",118],
+["Beat It","Michael Jackson",139],["Get Lucky","Daft Punk",116],["Shake It Off","Taylor Swift",160],
+["Bad Guy","Billie Eilish",135],["Sunflower","Post Malone",90],["Old Town Road","Lil Nas X",136],
+["Single Ladies","Beyoncé",97],["Poker Face","Lady Gaga",119],["Bad Romance","Lady Gaga",119],
+["Hips Don't Lie","Shakira",100],["Mamma Mia","ABBA",137],["Imagine","John Lennon",76],
+["Let It Be","The Beatles",72],["Hey Jude","The Beatles",74],["Come Together","The Beatles",82],
+["Back in Black","AC/DC",94],["Highway to Hell","AC/DC",116],["Enter Sandman","Metallica",123],
+["Smoke on the Water","Deep Purple",112],["Sweet Home Alabama","Lynyrd Skynyrd",98],["Born to Run","Bruce Springsteen",147],
+["Respect","Aretha Franklin",115],["My Girl","The Temptations",104],["Brown Eyed Girl","Van Morrison",150],
+["I Gotta Feeling","Black Eyed Peas",128],["Call Me Maybe","Carly Rae Jepsen",120],["Viva la Vida","Coldplay",138],
+["Clocks","Coldplay",131],["Yellow","Coldplay",87],["Somebody That I Used to Know","Gotye",129],
+["Counting Stars","OneRepublic",122],["Thinking Out Loud","Ed Sheeran",79],["Someone Like You","Adele",67],
+["Hello","Adele",79],["We Will Rock You","Queen",81],["Don't Stop Me Now","Queen",156],
+["Under Pressure","Queen & David Bowie",114],["Let's Dance","David Bowie",115],["Come As You Are","Nirvana",120],
+["In da Club","50 Cent",90],["Gangnam Style","PSY",132],["Jolene","Dolly Parton",111],
+["Sweet Caroline","Neil Diamond",128],["Roar","Katy Perry",90],["Firework","Katy Perry",124],
+["Smooth","Santana",116],["High and Dry","Radiohead",87],["Everlong","Foo Fighters",158],
+["Learn to Fly","Foo Fighters",136],["Boulevard of Broken Dreams","Green Day",83],["Under the Bridge","Red Hot Chili Peppers",84],
+["Californication","Red Hot Chili Peppers",96],["Scar Tissue","Red Hot Chili Peppers",88],["Don't Look Back in Anger","Oasis",82],
+["Song 2","Blur",130],["Reptilia","The Strokes",158],["Do I Wanna Know?","Arctic Monkeys",85],
+["R U Mine?","Arctic Monkeys",97],["With or Without You","U2",110],["Beautiful Day","U2",136],
+["Whole Lotta Love","Led Zeppelin",90],["Paint It Black","The Rolling Stones",160],["Baba O'Riley","The Who",116],
+["Dreams","Fleetwood Mac",120],["Go Your Own Way","Fleetwood Mac",136],["Free Fallin'","Tom Petty",84],
+["Jump","Van Halen",130],["Dream On","Aerosmith",80],["Walk This Way","Aerosmith",109],
+["Pour Some Sugar on Me","Def Leppard",94],["In the End","Linkin Park",105],["Numb","Linkin Park",110],
+["All the Small Things","blink-182",148],["Believer","Imagine Dragons",125],["Supermassive Black Hole","Muse",120],
+["Somebody to Love","Queen",110],["Roxanne","The Police",137],["Fortunate Son","Creedence Clearwater Revival",131],
+["Here Comes the Sun","The Beatles",129],["Zombie","The Cranberries",82],["Take Me to Church","Hozier",129]
+];
+const ROUNDS=5;
+let order,round,taps,cur,gameNo,roundPts,total=0,isDaily=false;
+const SITE_URL="https://beatdle.ca";
+const EPOCH=Date.UTC(2026,10,16);
+const $=id=>document.getElementById(id);
+const show=id=>["start","play","reveal","final"].forEach(s=>$(s).hidden=s!==id);
+const MULTS=[0.25,0.5,1,2,4];
+const match=(g,t)=>{let m=1,best=Infinity;MULTS.forEach(k=>{const d=Math.abs(g/k-t);if(d<best){best=d;m=k}});return{m,off:best}};
+const pct=(g,t)=>Math.round(match(g,t).off/t*100*1e6)/1e6;
+const points=(g,t)=>{const e=pct(g,t);return e<=2?100:e<=5?80:e<=10?50:e<=15?20:0};
+
+function songsFor(n){
+  const day=Math.max(1,n);
+  const len=SONGS.length;
+  if(!len)return[];
+  const start=((day-1)*ROUNDS)%len;
+  const out=[];
+  for(let i=0;i<ROUNDS;i++){
+    out.push(SONGS[(start+i)%len]);
+  }
+  return out;
+}
+function todayNo(){const d=new Date();return Math.max(1,1+Math.round((Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())-EPOCH)/86400000))}
+function startGame(n){
+  gameNo=n;isDaily=(n===todayNo());total=0;
+  
+  order=songsFor(gameNo);round=0;roundPts=[];
+  nextRound();
+}
+function nextRound(){
+  stopAutoTempo();cur=order[round];taps=[];
+  $("rnd").textContent="Game #"+gameNo+", round "+(round+1)+" of "+ROUNDS;
+  $("title").textContent=cur[0];$("artist").textContent=cur[1];
+  updatePad();show("play");
+}
+function currentBpm(){
+  if(taps.length<4)return null;
+  const t=taps.slice(-8);
+  return 60000/((t[t.length-1]-t[0])/(t.length-1));
+}
+function updatePad(){
+  const b=currentBpm(),pad=$("pad"),pctFill=Math.min(100,taps.length*25);
+  pad.style.setProperty("--fill",pctFill+"%");
+  pad.classList.toggle("filled",pctFill>=50);
+  $("padtxt").innerHTML=b?'<span class="big">'+Math.round(b)+'</span>BPM':'<span class="prompt">Tap your tempo guess here!</span>';
+  $("lock").disabled=!b;
+}
+let autoStartTimer=null,autoBeatTimer=null,autoBeatInterval=0;
+function stopAutoTempo(){
+  if(autoStartTimer){clearTimeout(autoStartTimer);autoStartTimer=null}
+  if(autoBeatTimer){clearInterval(autoBeatTimer);autoBeatTimer=null}
+  autoBeatInterval=0;
+}
+function playAutoBeat(){
+  if($("play").hidden||!currentBpm())return stopAutoTempo();
+  if(data.sfxEnabled)playSfx(data.sfxInstrument||"Bass Drum");
+}
+function scheduleAutoTempo(){
+  stopAutoTempo();
+  const b=currentBpm();
+  if(!b||$("play").hidden)return;
+  const interval=60000/b;
+  autoBeatInterval=interval;
+  // Wait 1 beat interval in silence after last tap; on the next beat (2x interval), start automated tempo playback
+  autoStartTimer=setTimeout(()=>{
+    autoStartTimer=null;
+    if($("play").hidden||!currentBpm())return;
+    playAutoBeat();
+    autoBeatTimer=setInterval(playAutoBeat,interval);
+  },interval*2);
+}
+function tap(){
+  stopAutoTempo();
+  const now=performance.now();
+  if(taps.length&&now-taps[taps.length-1]>2500)taps=[];
+  taps.push(now);
+  if(data.sfxEnabled)playSfx(data.sfxInstrument||"Bass Drum");
+  $("pad").classList.add("hit");setTimeout(()=>$("pad").classList.remove("hit"),80);
+  updatePad();
+  if(currentBpm())scheduleAutoTempo();
+}
+let audioCtx=null;
+function getAudioCtx(){
+  const Ctx=window.AudioContext||window.webkitAudioContext;
+  if(!Ctx)return null;
+  if(!audioCtx)audioCtx=new Ctx();
+  if(audioCtx.state==="suspended")audioCtx.resume().catch(()=>{});
+  return audioCtx;
+}
+function playSfx(inst){
+  const ctx=getAudioCtx();
+  if(!ctx)return;
+  const now=ctx.currentTime;
+  if(inst==="HH Cymbal"){
+    const len=Math.floor(ctx.sampleRate*0.08);
+    const buf=ctx.createBuffer(1,len,ctx.sampleRate);
+    const ch=buf.getChannelData(0);
+    for(let i=0;i<len;i++)ch[i]=(Math.random()*2-1)*Math.pow(1-i/len,2.4);
+    const src=ctx.createBufferSource();src.buffer=buf;
+    const hp=ctx.createBiquadFilter();hp.type="highpass";hp.frequency.setValueAtTime(6800,now);
+    const g=ctx.createGain();g.gain.setValueAtTime(0.28,now);g.gain.exponentialRampToValueAtTime(0.001,now+0.075);
+    src.connect(hp);hp.connect(g);g.connect(ctx.destination);
+    src.start(now);src.stop(now+0.08);
+  }else if(inst==="Cow bell"){
+    const freqs=[540,810];
+    const bp=ctx.createBiquadFilter();bp.type="bandpass";bp.frequency.setValueAtTime(680,now);bp.Q.setValueAtTime(3.5,now);
+    const g=ctx.createGain();g.gain.setValueAtTime(0.25,now);g.gain.exponentialRampToValueAtTime(0.001,now+0.24);
+    bp.connect(g);g.connect(ctx.destination);
+    freqs.forEach(f=>{
+      const osc=ctx.createOscillator();osc.type="square";osc.frequency.setValueAtTime(f,now);
+      osc.connect(bp);osc.start(now);osc.stop(now+0.25);
+    });
+  }else{
+    const osc=ctx.createOscillator();osc.type="sine";
+    osc.frequency.setValueAtTime(145,now);osc.frequency.exponentialRampToValueAtTime(42,now+0.16);
+    const g=ctx.createGain();g.gain.setValueAtTime(0.55,now);g.gain.exponentialRampToValueAtTime(0.001,now+0.18);
+    osc.connect(g);g.connect(ctx.destination);
+    osc.start(now);osc.stop(now+0.19);
+  }
+}
+const KEY="beatdle.v1";
+const VALID_SFX=["Bass Drum","HH Cymbal","Cow bell"];
+let data={games:{},daily:{},sfxEnabled:false,sfxInstrument:"Bass Drum"};
+function syncSfxUi(){
+  const on=!!data.sfxEnabled;
+  const inst=VALID_SFX.includes(data.sfxInstrument)?data.sfxInstrument:"Bass Drum";
+  data.sfxInstrument=inst;
+  const btn=$("sfxToggle"),sel=$("sfxInstrument"),st=$("sfxStateTxt");
+  if(btn){btn.setAttribute("aria-checked",on?"true":"false")}
+  if(st){st.textContent=on?"ON":"OFF"}
+  if(sel){sel.value=inst;sel.hidden=!on}
+}
+function load(){
+  try{
+    const r=localStorage.getItem(KEY);
+    if(r){
+      const d=JSON.parse(r);
+      if(d&&typeof d==="object"){
+        const g=d.games&&typeof d.games==="object"?Object.assign({},d.games):{};
+        if(d.archive&&typeof d.archive==="object")Object.keys(d.archive).forEach(k=>{if(!g[k])g[k]=d.archive[k]});
+        if(d.daily&&typeof d.daily==="object")Object.keys(d.daily).forEach(k=>{g[k]=d.daily[k]});
+        const sfxOn=typeof d.sfxEnabled==="boolean"?d.sfxEnabled:false;
+        const sfxInst=VALID_SFX.includes(d.sfxInstrument)?d.sfxInstrument:"Bass Drum";
+        data={games:g,daily:d.daily&&typeof d.daily==="object"?Object.assign({},d.daily):{},sfxEnabled:sfxOn,sfxInstrument:sfxInst};
+      }
+    }
+  }catch(e){}
+  syncSfxUi();
+}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(data))}catch(e){}}
+function record(n,daily,total,pts){
+  if(!data.games[n])data.games[n]={score:total,pts:pts};
+  if(daily&&!data.daily[n])data.daily[n]={score:total,pts:pts};
+  save();
+}
+function played(n){return data.games[n]||null}
+function streak(){let n=todayNo();if(!data.daily[n])n--;let c=0;while(n>=1&&data.daily[n]){c++;n--}return c}
+function allStats(){const ks=Object.keys(data.games),b=[0,0,0,0,0];let sum=0,best=0;ks.forEach(k=>{const v=data.games[k].score;sum+=v;if(v>best)best=v;b[Math.min(4,Math.floor(v/100))]++});return{count:ks.length,avg:ks.length?Math.round(sum/ks.length):0,best:best,dist:b}}
+function buildStats(isFirst){
+  const s=allStats(),labels=["0–99","100–199","200–299","300–399","400–500"];
+  let h='<h2 style="font-size:1.3rem;margin:26px 0 8px">Stats</h2>';
+  if(!s.count)h+='<p>Stats appear once you finish a game.</p>';
+  else{
+    const mx=Math.max(...s.dist),rec=data.games[gameNo],hi=rec?Math.min(4,Math.floor(rec.score/100)):-1;
+    h+='<div class="stats"><div class="stat"><b>'+streak()+'</b><span>Daily streak</span></div><div class="stat"><b>'+s.avg+'</b><span>Average score</span></div><div class="stat"><b>'+s.best+'</b><span>Best score</span></div></div><div class="dist">';
+    s.dist.forEach((c,i)=>{h+='<span>'+labels[i]+'</span>'+(c?'<div class="bar'+(i===hi?' hi':'')+'" style="width:'+Math.max(8,Math.round(100*c/mx))+'%">'+c+'</div>':'<span>0</span>')});
+    h+='</div>';
+  }
+  if(!isFirst)h+='<p style="margin-top:14px">Replay: only your first attempt ('+data.games[gameNo].score+'/500) counts toward stats.</p>';
+  $("statsbox").innerHTML=h;
+}
+function shareText(n,t,pts){return "Beatdle #"+n+": "+t+"/"+ROUNDS*100+"\n"+pts.map(p=>p>=80?"🟩":p>=40?"🟨":"🟥").join("")+"\n"+SITE_URL}
+function buildStart(){
+  const n=todayNo(),d=data.daily[n];
+  $("todayinfo").textContent=d?"Game #"+n+" played today: "+d.score+"/500 ✓":"Game #"+n;
+  $("menushare").hidden=!d;
+  if(d)$("menushare").textContent=shareText(n,d.score,d.pts||[]);
+  $("go").textContent=d?"Share today’s score":"Today’s game";
+  $("replay").hidden=!d;
+  buildArchive();
+}
+function showStart(){buildStart();show("start")}
+function lockIn(){
+  stopAutoTempo();
+  const truth=cur[2],g=Math.round(currentBpm()),r=match(g,truth),e=pct(g,truth),p=points(g,truth);
+  total+=p;roundPts.push(p);
+  $("rtitle").textContent=cur[0]+" — "+cur[1];
+  $("truth").textContent=truth;
+  $("rtable").innerHTML='<tr><th>Your guess</th><th>Off by</th><th>Points</th></tr><tr class="me '+(p>=80?"high":p>=40?"mid":"low")+'"><td>'+g+(r.m!==1?" ("+{0.25:"¼×",0.5:"½×",2:"2×",4:"4×"}[r.m]+")":"")+"</td><td>"+Math.round(r.off)+" ("+e.toFixed(1)+"%)</td><td>+"+p+"</td></tr>";
+  $("nextbtn").textContent=round+1<ROUNDS?"Next round":"See final scores";
+  show("reveal");
+}
+function finish(){
+  const isFirst=!data.games[gameNo];
+  record(gameNo,isDaily,total,roundPts.slice());
+  const firstRec=data.games[gameNo];
+  const sq=p=>p>=80?"🟩":p>=40?"🟨":"🟥";
+  $("winner").textContent="Game #"+gameNo+(isFirst?" complete":" replayed");
+  $("ftable").innerHTML="<tr><th>Round</th><th>Score</th></tr>"+roundPts.map((p,i)=>"<tr><td>Round "+(i+1)+"</td><td>"+p+" "+sq(p)+"</td></tr>").join("")+'<tr class="me"><td>Your total</td><td>'+total+"</td></tr>";
+  $("sharetitle").textContent=isDaily?"Today’s score":"First attempt score";
+  buildStats(isFirst);
+  $("share").textContent=shareText(gameNo,firstRec.score,firstRec.pts||roundPts);
+  setBtnLabel($("copy"),"Share");
+  show("final");
+}
+function setBtnLabel(btn,txt){const s=btn.querySelector("span");if(s)s.textContent=txt;else btn.textContent=txt}
+$("go").onclick=()=>{if(data.daily[todayNo()])shareFrom($("menushare"),$("go"));else startGame(todayNo())};
+$("replay").onclick=()=>startGame(todayNo());
+
+
+function isDesktopOrLaptop(){
+  const mobileUa=/Android|iPhone|iPad|iPod|Mobi/i.test(navigator.userAgent||"");
+  const hasFineHover=window.matchMedia&&window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+  return !mobileUa && !!hasFineHover;
+}
+async function shareFrom(pre,btn){
+  const t=pre.textContent;
+  if(!isDesktopOrLaptop()&&navigator.share){
+    try{await navigator.share({text:t});return}catch(e){if(e&&e.name==="AbortError")return}
+  }
+  const orig=btn.querySelector("span")?btn.querySelector("span").textContent:btn.textContent;
+  try{
+    await navigator.clipboard.writeText(t);
+    setBtnLabel(btn,"Copied");
+    setTimeout(()=>setBtnLabel(btn,orig),2000);
+  }catch(e){
+    const r=document.createRange();r.selectNodeContents(pre);const g=getSelection();g.removeAllRanges();g.addRange(r);
+    let ok=false;try{ok=document.execCommand("copy")}catch(e2){}
+    setBtnLabel(btn,ok?"Copied":"Select and copy the text above");
+  }
+}
+$("copy").onclick=()=>shareFrom($("share"),$("copy"));
+$("menu").onclick=()=>{stopAutoTempo();showStart()};
+let calY=new Date().getFullYear(),calM=new Date().getMonth();
+function buildArchive(){
+  const t=todayNo(),td=new Date(),ty=td.getFullYear(),tm=td.getMonth(),box=$('archive');
+  const first=new Date(calY,calM,1),days=new Date(calY,calM+1,0).getDate();
+  const canPrev=calY*12+calM>2026*12+10,canNext=calY*12+calM<ty*12+tm;
+  let h='<div class="calhead"><button class="ghost" id="prev"'+(canPrev?'':' disabled')+' aria-label="Previous month">\u2039</button><b>'+first.toLocaleDateString(undefined,{month:'long',year:'numeric'})+'</b><button class="ghost" id="next"'+(canNext?'':' disabled')+' aria-label="Next month">\u203a</button></div><div class="cal">';
+  'SMTWTFS'.split('').forEach(d=>h+='<i>'+d+'</i>');
+  for(let i=0;i<first.getDay();i++)h+='<span></span>';
+  for(let d=1;d<=days;d++){
+    const n=1+Math.round((Date.UTC(calY,calM,d)-EPOCH)/86400000);
+    const pl=(n>=1&&n<=t)?played(n):null,cl=[n===t?'today':'',pl?'played':''].filter(Boolean).join(' ');
+    h+=(n>=1&&n<=t)?'<button data-n="'+n+'"'+(cl?' class="'+cl+'"':'')+'>'+d+'<small>'+(pl?'✓ '+pl.score:'#'+n)+'</small></button>':'<span class="off">'+d+'</span>';
+  }
+  box.innerHTML=h+'</div>';
+  box.querySelectorAll('button[data-n]').forEach(b=>b.onclick=()=>startGame(+b.dataset.n));
+  $('prev').onclick=()=>{calM--;if(calM<0){calM=11;calY--}buildArchive()};
+  $('next').onclick=()=>{calM++;if(calM>11){calM=0;calY++}buildArchive()};
+}
+load();if(data.daily[todayNo()])showStart();else startGame(todayNo());
+
+$("again").onclick=showStart;
+$("sfxToggle").onclick=()=>{
+  data.sfxEnabled=!data.sfxEnabled;
+  if(data.sfxEnabled){
+    getAudioCtx();
+    if(!$("play").hidden&&currentBpm()&&!autoStartTimer&&!autoBeatTimer)scheduleAutoTempo();
+  }else{
+    stopAutoTempo();
+  }
+  syncSfxUi();
+  save();
+};
+$("sfxInstrument").onchange=()=>{
+  data.sfxInstrument=$("sfxInstrument").value;
+  syncSfxUi();
+  save();
+};
+$("pad").addEventListener("pointerdown",e=>{e.preventDefault();tap()});
+$("reset").onclick=()=>{stopAutoTempo();taps=[];updatePad()};
+$("lock").onclick=lockIn;
+$("nextbtn").onclick=()=>{round++;round<ROUNDS?nextRound():finish()};
+document.addEventListener("keydown",e=>{
+  if(e.code==="Space"&&!$("play").hidden){e.preventDefault();if(!e.repeat)tap()}
+});
+</script>
+<script data-goatcounter="https://johnbeatdle.goatcounter.com/count"
+            async src="//gc.zgo.at/count.js"></script>
+</body>
+</html>
