@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>River's Hoops</title>
+<style>
+  :root{--bg:#0b1020;--panel:#141b30;--line:#26304d;--text:#eef1f8;--dim:#8f9ab8;--amber:#fbbf24;--green:#34d399;--sky:#38bdf8}
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+  .app{max-width:520px;height:100%;margin:0 auto;padding:8px;display:flex;flex-direction:column;gap:8px}
+  header{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  h1{font-size:18px;margin:0;letter-spacing:.3px}
+  .ctl{display:flex;gap:6px}
+  select,button{font:inherit;font-size:13px;font-weight:600;color:var(--text);background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:6px 10px;cursor:pointer}
+  select:focus-visible,button:focus-visible{outline:2px solid var(--amber)}
+  .stats{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:6px;text-align:center}
+  .stats b{display:block;font-size:20px;font-variant-numeric:tabular-nums}
+  .stats span{font-size:11px;color:var(--dim)}
+  #clock.low{color:#f87171}
+  main{position:relative;flex:1;min-height:220px;border:1px solid var(--line);border-radius:16px;overflow:hidden;background:#090d16}
+  canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+  #over{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:6px;background:rgba(9,13,22,.88);text-align:center;padding:16px}
+  #over.show{display:flex}
+  #over h2{margin:0;font-size:26px}
+  #over p{margin:0;color:var(--dim)}
+  footer{display:flex;flex-direction:column;gap:8px;padding-bottom:env(safe-area-inset-bottom,0)}
+  .row{display:flex;justify-content:space-between;font-size:12px;font-weight:700;color:var(--dim)}
+  #phase{color:var(--amber)}
+  #meter{position:relative;height:32px;border-radius:12px;background:#060912;border:1px solid var(--line);overflow:hidden}
+  #meter i{position:absolute;top:0;bottom:0;transform:translateX(-50%)}
+  #zero{left:50%;width:2px;background:rgba(255,255,255,.85);z-index:2}
+  #band{left:50%;background:rgba(52,211,153,.25);border-left:1px solid rgba(110,231,183,.8);border-right:1px solid rgba(110,231,183,.8)}
+  #mark{display:none;top:3px!important;bottom:3px!important;width:4px;border-radius:3px;background:var(--sky);z-index:3}
+  #needle{left:50%;top:3px!important;bottom:3px!important;width:10px;border-radius:6px;background:linear-gradient(#fff,#fde68a,#fbbf24);box-shadow:0 0 10px rgba(251,191,36,.8);z-index:4}
+  #shoot{height:46px;border:0;border-radius:14px;background:linear-gradient(#fbbf24,#ea580c);color:#1a1205;font-size:20px;font-weight:800;letter-spacing:1px}
+  #shoot:active{transform:translateY(1px)}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>River's Hoops</h1>
+    <div class="ctl">
+      <select id="skill" aria-label="Skill level">
+        <option value="5">Lv 5 (Easy)</option><option value="6" selected>Lv 6</option><option value="7">Lv 7</option>
+        <option value="8">Lv 8</option><option value="9">Lv 9</option><option value="10">Lv 10 (Hard)</option>
+      </select>
+      <button id="mute" type="button" aria-label="Toggle sound">Sound on</button>
+      <button id="reset" type="button">Reset</button>
+    </div>
+  </header>
+
+  <section class="stats" aria-label="Stats">
+    <div><b id="clock">30.0</b><span>Seconds</span></div>
+    <div><b id="score">0</b><span>Points</span></div>
+    <div><b id="streak">0</b><span>Streak</span></div>
+    <div><b id="shots">0/0</b><span>Makes</span></div>
+    <div><b id="best">0</b><span>Best</span></div>
+  </section>
+
+  <main id="court"><canvas id="cv"></canvas>
+    <div id="over"><h2>Time!</h2><p id="overText"></p><p>Tap SHOOT to play again</p><button id="share" type="button">Share score</button></div>
+  </main>
+
+  <footer>
+    <div class="row"><span id="phase">TAP SHOOT TO START</span><span id="last"></span></div>
+    <div id="meter"><i id="zero"></i><i id="band" style="width:13%"></i><i id="mark"></i><i id="needle"></i></div>
+    <button id="shoot" type="button">SHOOT</button>
+  </footer>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  // Skill levels: slotHalf = size of the "make" window, swishHalf = perfect window, speed = needle speed
+  var SKILL = {
+    5:{slot:.085,swish:.032,speed:1.45}, 6:{slot:.078,swish:.029,speed:1.6}, 7:{slot:.054,swish:.020,speed:2.08},
+    8:{slot:.042,swish:.015,speed:2.42}, 9:{slot:.031,swish:.011,speed:2.80}, 10:{slot:.022,swish:.008,speed:3.22}
+  };
+  var ROUND = 30, FLIGHT = 1.05;
+  var $ = function (id) { return document.getElementById(id); };
+  var el = {clock:$("clock"),score:$("score"),streak:$("streak"),shots:$("shots"),best:$("best"),phase:$("phase"),last:$("last"),
+    needle:$("needle"),mark:$("mark"),band:$("band"),over:$("over"),overText:$("overText"),skill:$("skill"),mute:$("mute")};
+  var cv = $("cv"), ctx = cv.getContext("2d"), court = $("court");
+
+  // Storage (safe if blocked)
+  var mem = {};
+  function load(k){ try{ var v=localStorage.getItem(k); if(v!==null) return v; }catch(e){} return mem[k]||null; }
+  function save(k,v){ mem[k]=String(v); try{ localStorage.setItem(k,String(v)); }catch(e){} }
+
+  var st = {skill:6, phase:"idle", time:ROUND, aim:0, dir:1, score:0, streak:0, made:0, taken:0, best:0, lastTap:0,
+    ball:null, resetT:0, callout:"", calloutA:0, calloutC:"#fff", sway:0, swayV:0};
+  var s0 = parseInt(load("rh_skill"),10); if (SKILL[s0]) st.skill = s0;
+  el.skill.value = st.skill;
+  function loadBest(){ return parseInt(load("rh_best_"+st.skill),10)||0; }
+  st.best = loadBest();
+
+  // Virtual court 400 x 300, scaled to fit
+  var VW=400, VH=300, FLOOR=262, RIM_L=300, RIM_R=336, RIM_Y=118, BALL_R=9;
+  var river = {x:90, y:FLOOR};
+  var L = {w:400,h:300,dpr:1,sc:1,ox:0,oy:0};
+  function resize(){
+    var r = court.getBoundingClientRect();
+    var w = Math.max(200, Math.floor(r.width)), h = Math.max(160, Math.floor(r.height));
+    var dpr = Math.min(window.devicePixelRatio||1, 2);
+    cv.width = w*dpr; cv.height = h*dpr;
+    var sc = Math.min(w/VW, h/VH);
+    L = {w:w,h:h,dpr:dpr,sc:sc,ox:(w-VW*sc)/2,oy:(h-VH*sc)/2};
+  }
+  window.addEventListener("resize", resize);
+
+  // Sound
+  var actx=null, muted=false;
+  function ac(){ if(muted) return null; try{ if(!actx) actx=new (window.AudioContext||window.webkitAudioContext)(); if(actx.state==="suspended") actx.resume(); return actx; }catch(e){ return null; } }
+  function beep(type,f0,f1,dur,vol){
+    var c=ac(); if(!c) return;
+    try{
+      var t=c.currentTime,o=c.createOscillator(),g=c.createGain();
+      o.type=type; o.frequency.setValueAtTime(f0,t); if(f1) o.frequency.exponentialRampToValueAtTime(f1,t+dur);
+      g.gain.setValueAtTime(vol,t); g.gain.exponentialRampToValueAtTime(.0005,t+dur);
+      o.connect(g); g.connect(c.destination); o.start(t); o.stop(t+dur+.01);
+    }catch(e){}
+  }
+  var sfx = {
+    tick:function(){beep("sine",520,0,.035,.025);},
+    whoosh:function(){beep("triangle",210,460,.1,.07);},
+    swish:function(){beep("sine",880,1320,.18,.09);},
+    make:function(){beep("sine",660,990,.14,.08);},
+    miss:function(){beep("sawtooth",160,90,.16,.06);},
+    buzzer:function(){beep("sawtooth",148,112,.45,.11);}
+  };
+
+  // Round flow
+  function startRound(){
+    st.time=ROUND; st.score=0; st.streak=0; st.made=0; st.taken=0; st.ball=null;
+    st.aim=-1; st.dir=1; st.phase="aiming"; st.best=loadBest();
+    el.over.classList.remove("show"); el.mark.style.display="none"; el.last.textContent="";
+    hud();
+  }
+  function endRound(){
+    st.phase="ended"; sfx.buzzer();
+    var newBest = st.score > st.best;
+    if (newBest){ st.best=st.score; save("rh_best_"+st.skill, st.best); }
+    el.overText.textContent = st.score+" points, "+st.made+" of "+st.taken+" made"+(newBest?" - new best!":"");
+    el.over.classList.add("show"); hud();
+  }
+  function shoot(){
+    var now=performance.now(); if(now-st.lastTap<110) return; st.lastTap=now;
+    ac();
+    if (st.phase==="idle" || st.phase==="ended"){ startRound(); return; }
+    if (st.phase!=="aiming") return;
+    var w=SKILL[st.skill], pos=st.aim, err=Math.abs(pos);
+    st.taken++;
+    var sx=river.x+20, sy=river.y-70, tx=(RIM_L+RIM_R)/2, ty=RIM_Y+4;
+    var off;
+    if (err<=w.swish) off=pos/w.swish*2;
+    else if (err<=w.slot) off=(pos/w.slot)*9;
+    else off=(pos>0?1:-1)*(9+Math.pow(err-w.slot,.8)*220);
+    var vx=(tx+off-sx)/FLIGHT, vy=(ty-sy-.5*G*FLIGHT*FLIGHT)/FLIGHT;
+    st.ball={x:sx,y:sy,vx:vx,vy:vy,t:0,hit:false,scored:false,scoredAt:0,trail:[]};
+    st.phase="flying"; sfx.whoosh();
+    el.last.textContent="Shot: "+(pos>0?"+":"")+(pos*100).toFixed(1)+"%";
+    el.mark.style.left=((pos+1)/2*100)+"%"; el.mark.style.display="block";
+    hud();
+  }
+  function scoreShot(b){
+    var clean=!b.hit, pts=clean?3:2;
+    st.streak++; st.made++;
+    var total=pts+(st.streak>=3?1:0); st.score+=total;
+    st.sway=1; (clean?sfx.swish:sfx.make)();
+    say((clean?"SWISH +":"BUCKET +")+total, clean?"#34d399":"#fbbf24"); hud();
+  }
+  function finishShot(){
+    var b=st.ball;
+    if (!b.scored){ st.streak=0; sfx.miss(); say(b.hit?"RIM OUT":"AIR BALL","#fca5a5"); }
+    st.ball=null;
+    if (st.time<=0) endRound(); else { st.phase="resetting"; st.resetT=.34; hud(); }
+  }
+  function say(t,c){ st.callout=t; st.calloutC=c; st.calloutA=1; }
+
+  // HUD
+  function hud(){
+    el.clock.textContent=st.time.toFixed(1); el.clock.className=st.time<=5&&st.phase!=="idle"?"low":"";
+    el.score.textContent=st.score; el.streak.textContent=st.streak;
+    el.shots.textContent=st.made+"/"+st.taken; el.best.textContent=st.best;
+    el.band.style.width=Math.max(2,SKILL[st.skill].slot*100)+"%";
+    var p={idle:"TAP SHOOT TO START",aiming:"AIM CENTER",flying:st.time<=0?"FINAL SHOT...":"IN FLIGHT",resetting:"RESETTING",ended:"ROUND OVER"};
+    el.phase.textContent=p[st.phase];
+  }
+
+  // ---- Ball physics: gravity, rim, backboard, floor ----
+  var G=900, FLOORY=FLOOR-8;
+  function bounceOff(b,px,py,pr,e){
+    var dx=b.x-px, dy=b.y-py, d=Math.sqrt(dx*dx+dy*dy), min=BALL_R+pr;
+    if (d>=min||d===0) return false;
+    var nx=dx/d, ny=dy/d; b.x=px+nx*min; b.y=py+ny*min;
+    var vn=b.vx*nx+b.vy*ny;
+    if (vn<0){ b.vx-=(1+e)*vn*nx; b.vy-=(1+e)*vn*ny; b.vx*=.985; b.vy*=.985; return true; }
+    return false;
+  }
+  function stepBall(b,dt){
+    var prevY=b.y;
+    b.vy+=G*dt; b.x+=b.vx*dt; b.y+=b.vy*dt; b.t+=dt;
+    if (!b.scored && bounceOff(b,RIM_L,RIM_Y,3,.5)) b.hit=true;   // front rim
+    if (!b.scored && bounceOff(b,RIM_R,RIM_Y,3,.5)) b.hit=true;   // back rim
+    if (!b.scored && b.y>RIM_Y-52-BALL_R && b.y<RIM_Y+18+BALL_R && b.x+BALL_R>340 && b.x<348 && b.vx>0){ // backboard
+      b.x=340-BALL_R; b.vx=-b.vx*.55; b.vy*=.95; b.hit=true;
+    }
+    if (b.y>RIM_Y+18 && b.x+BALL_R>356 && b.vx>0){ b.x=356-BALL_R; b.vx=-b.vx*.5; } // pole
+    var through=false;
+    if (!b.scored && prevY<RIM_Y && b.y>=RIM_Y && b.vy>0 && b.x>RIM_L+3 && b.x<RIM_R-3){ b.scored=true; b.scoredAt=b.t; through=true; }
+    if (b.scored && b.y<RIM_Y+30) b.vx*=Math.pow(.05,dt); // net slows sideways motion
+    var fy=FLOORY-BALL_R;
+    if (b.y>fy){ b.y=fy; if (Math.abs(b.vy)>60){ b.vy=-b.vy*.55; b.vx*=.8; } else { b.vy=0; b.vx*=.9; } }
+    return through?"score":null;
+  }
+
+  // Update
+  function update(dt){
+    if (st.phase!=="idle" && st.phase!=="ended" && st.time>0){
+      st.time=Math.max(0,st.time-dt);
+      if (st.time===0){
+        if (st.phase==="aiming"||st.phase==="resetting"){ endRound(); }
+        else sfx.buzzer();
+      }
+      el.clock.textContent=st.time.toFixed(1); el.clock.className=st.time<=5?"low":"";
+    }
+    if (st.phase==="aiming"){
+      var w=SKILL[st.skill], prev=st.aim;
+      st.aim+=st.dir*w.speed*dt;
+      if (st.aim>=1){st.aim=1;st.dir=-1;} else if (st.aim<=-1){st.aim=-1;st.dir=1;}
+      if ((prev<0&&st.aim>=0)||(prev>0&&st.aim<=0)) sfx.tick();
+      el.needle.style.left=((st.aim+1)/2*100)+"%";
+    } else if (st.phase==="resetting"){
+      st.resetT-=dt;
+      if (st.resetT<=0){ st.phase="aiming"; el.mark.style.display="none"; hud(); }
+    }
+    var b=st.ball;
+    if (b){
+      for (var i=0;i<4;i++){ if (stepBall(b,dt/4)==="score") scoreShot(b); }
+      b.trail.push({x:b.x,y:b.y}); if(b.trail.length>6) b.trail.shift();
+      var resting=b.y>=FLOORY-BALL_R-.5 && b.vy===0 && b.t>.8;
+      if (b.t>3.2 || resting || b.x<-30 || b.x>VW+30 || (b.scored && b.t-b.scoredAt>.55)) finishShot();
+    }
+    st.swayV+=(-48*st.sway-5.2*st.swayV)*dt; st.sway+=st.swayV*dt;
+    if (st.calloutA>0) st.calloutA=Math.max(0,st.calloutA-dt*.9);
+  }
+
+  // Drawing
+  function draw(){
+    var c=ctx; c.setTransform(L.dpr,0,0,L.dpr,0,0);
+    c.fillStyle="#090d16"; c.fillRect(0,0,L.w,L.h);
+    c.translate(L.ox,L.oy); c.scale(L.sc,L.sc);
+    // floor
+    var g=c.createLinearGradient(0,FLOOR-20,0,VH); g.addColorStop(0,"#7c4a1e"); g.addColorStop(1,"#4a2a10");
+    c.fillStyle=g; c.fillRect(0,FLOOR-8,VW,VH-FLOOR+8);
+    c.strokeStyle="rgba(255,255,255,.35)"; c.lineWidth=2; c.beginPath(); c.moveTo(0,FLOOR-8); c.lineTo(VW,FLOOR-8); c.stroke();
+    // backboard + pole
+    c.fillStyle="#cbd5e1"; c.fillRect(356,FLOOR-8-190,6,190);
+    c.fillStyle="#f1f5f9"; c.fillRect(340,RIM_Y-52,8,70);
+    c.strokeStyle="#ef4444"; c.lineWidth=2; c.strokeRect(341,RIM_Y-20,6,20);
+    // net
+    var sw=st.sway*5; c.strokeStyle="rgba(255,255,255,.75)"; c.lineWidth=1.2;
+    for (var i=0;i<=4;i++){ var x0=RIM_L+i*(RIM_R-RIM_L)/4, x1=RIM_L+6+i*(RIM_R-RIM_L-12)/4+sw;
+      c.beginPath(); c.moveTo(x0,RIM_Y); c.lineTo(x1,RIM_Y+26); c.stroke(); }
+    c.beginPath(); c.moveTo(RIM_L+3,RIM_Y+12); c.lineTo(RIM_R-3+sw*.5,RIM_Y+12); c.moveTo(RIM_L+6+sw,RIM_Y+26); c.lineTo(RIM_R-6+sw,RIM_Y+26); c.stroke();
+    // rim
+    c.strokeStyle="#f97316"; c.lineWidth=4; c.lineCap="round"; c.beginPath(); c.moveTo(RIM_L,RIM_Y); c.lineTo(RIM_R,RIM_Y); c.stroke();
+    // River (simple figure)
+    var rx=river.x, ry=river.y-8, shooting=st.phase==="flying"&&st.ball&&st.ball.t<.25;
+    c.fillStyle="#1e293b"; c.fillRect(rx-12,ry-34,10,34); c.fillRect(rx+2,ry-34,10,34);
+    c.fillStyle="#38bdf8"; c.fillRect(rx-15,ry-70,30,38);
+    c.fillStyle="#fcd9b6"; c.beginPath(); c.arc(rx,ry-82,11,0,7); c.fill();
+    c.strokeStyle="#fcd9b6"; c.lineWidth=6; c.lineCap="round"; c.beginPath();
+    c.moveTo(rx+12,ry-62); c.lineTo(rx+(shooting?24:20),ry-(shooting?96:70)); c.stroke();
+    // ball
+    var b=st.ball, bx, by;
+    if (b){ c.fillStyle="rgba(251,146,60,.25)"; b.trail.forEach(function(p,i){ c.beginPath(); c.arc(p.x,p.y,BALL_R*(.4+i*.08),0,7); c.fill(); }); bx=b.x; by=b.y; }
+    else { bx=rx+22; by=river.y-14-Math.abs(Math.sin(performance.now()/160))*18; }
+    c.fillStyle="#f97316"; c.beginPath(); c.arc(bx,by,BALL_R,0,7); c.fill();
+    c.strokeStyle="#7c2d12"; c.lineWidth=1.2; c.beginPath(); c.arc(bx,by,BALL_R,0,7); c.moveTo(bx-BALL_R,by); c.lineTo(bx+BALL_R,by); c.moveTo(bx,by-BALL_R); c.lineTo(bx,by+BALL_R); c.stroke();
+    // callout
+    if (st.calloutA>0){ c.globalAlpha=Math.min(1,st.calloutA*1.5); c.fillStyle=st.calloutC; c.font="800 26px system-ui,sans-serif"; c.textAlign="center";
+      c.fillText(st.callout,VW/2,70-(1-st.calloutA)*14); c.globalAlpha=1; }
+  }
+
+  var last=performance.now();
+  function loop(now){
+    var dt=Math.max(0,Math.min((now-last)/1000,.05)); last=now;
+    update(dt); draw(); requestAnimationFrame(loop);
+  }
+
+  // Controls
+  el.skill.addEventListener("change",function(){
+    st.skill=parseInt(el.skill.value,10); save("rh_skill",st.skill); startRound();
+  });
+  el.mute.addEventListener("click",function(){ muted=!muted; el.mute.textContent=muted?"Sound off":"Sound on"; if(!muted) ac(); });
+  $("reset").addEventListener("click",function(){ ac(); startRound(); });
+  $("shoot").addEventListener("click",shoot);
+  var shareBtn=$("share");
+  shareBtn.addEventListener("pointerdown",function(e){ e.stopPropagation(); });
+  shareBtn.addEventListener("click",function(){
+    var text="I scored "+st.score+" points on Level "+st.skill+" in River's Hoops! Can you beat it?", link="https://beatdle.ca/riv";
+    function fallback(){
+      var done=function(){ shareBtn.textContent="Copied!"; setTimeout(function(){ shareBtn.textContent="Share score"; },1500); };
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text+" "+link).then(done,function(){ window.prompt("Copy your score:",text+" "+link); });
+      else window.prompt("Copy your score:",text+" "+link);
+    }
+    if (navigator.share){
+      navigator.share({title:"River's Hoops",text:text,url:link}).catch(function(err){ if (!err||err.name!=="AbortError") fallback(); });
+    } else fallback();
+  });
+  court.addEventListener("pointerdown",function(e){ e.preventDefault(); shoot(); });
+  window.addEventListener("keydown",function(e){
+    if (e.code==="Space" && e.target.tagName!=="SELECT"){ e.preventDefault(); shoot(); }
+  });
+
+  resize(); hud(); requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
