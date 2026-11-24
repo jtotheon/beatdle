@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- Beatdle V2.4 -->
+<!-- Beatdle V2.5 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -90,8 +90,9 @@ pre{white-space:pre-wrap;word-break:break-all;background:var(--card);border-radi
     <h2 id="title"></h2>
     <div class="meta" id="artist"></div>
     <button id="pad" aria-label="Tap the beat"><span id="padtxt"><span class="prompt">Tap your tempo guess here!</span></span></button>
-    <div class="row">
-      <button class="ghost" id="reset">Start over</button>
+    <div class="row" style="flex-wrap:wrap">
+      <button id="reset">Start over</button>
+      <button id="skip">Skip song</button>
       <button id="lock" disabled>Lock in</button>
     </div>
     <div class="meta">Tap at least 4 times. You can also press the space bar.</div>
@@ -546,6 +547,13 @@ $("sfxInstrument").onchange=()=>{
 };
 $("pad").addEventListener("pointerdown",e=>{e.preventDefault();tap()});
 $("reset").onclick=()=>{stopAutoTempo();taps=[];updatePad()};
+function skipSong(){
+  stopAutoTempo();
+  roundPts.push(0);
+  round++;
+  round<ROUNDS?nextRound():finish();
+}
+$("skip").onclick=skipSong;
 $("lock").onclick=lockIn;
 $("nextbtn").onclick=()=>{round++;round<ROUNDS?nextRound():finish()};
 document.addEventListener("keydown",e=>{
