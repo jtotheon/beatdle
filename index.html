@@ -105,8 +105,10 @@ pre{white-space:pre-wrap;word-break:break-all;background:var(--card);border-radi
       </div>
       <select class="sfxselect" id="sfxInstrument" aria-label="Sound effect instrument" hidden>
         <option value="Bass Drum" selected>Bass Drum</option>
-        <option value="H.Hat Cymbal">HH Cymbal</option>
-        <option value="Lame Cow bell">Cow bell</option>
+        <option value="HH Cymbal">HH Cymbal</option>
+        <option value="Woodblock">Woodblock</option>
+        <option value="Metronome">Metronome</option>
+        <option value="Triangle">Triangle</option>
       </select>
     </div>
     <div style="margin:2em 0 .4em"><button class="ghost" id="menu">Menu</button></div>
@@ -323,14 +325,57 @@ function playSfx(inst){
     const g=ctx.createGain();g.gain.setValueAtTime(0.28,now);g.gain.exponentialRampToValueAtTime(0.001,now+0.075);
     src.connect(hp);hp.connect(g);g.connect(ctx.destination);
     src.start(now);src.stop(now+0.08);
-  }else if(inst==="Cow bell"){
-    const freqs=[540,810];
-    const bp=ctx.createBiquadFilter();bp.type="bandpass";bp.frequency.setValueAtTime(680,now);bp.Q.setValueAtTime(3.5,now);
-    const g=ctx.createGain();g.gain.setValueAtTime(0.25,now);g.gain.exponentialRampToValueAtTime(0.001,now+0.24);
-    bp.connect(g);g.connect(ctx.destination);
-    freqs.forEach(f=>{
-      const osc=ctx.createOscillator();osc.type="square";osc.frequency.setValueAtTime(f,now);
-      osc.connect(bp);osc.start(now);osc.stop(now+0.25);
+  }else if(inst==="Woodblock"){
+    const osc1=ctx.createOscillator();osc1.type="sine";
+    osc1.frequency.setValueAtTime(880,now);
+    osc1.frequency.exponentialRampToValueAtTime(760,now+0.045);
+    const osc2=ctx.createOscillator();osc2.type="triangle";
+    osc2.frequency.setValueAtTime(1320,now);
+    osc2.frequency.exponentialRampToValueAtTime(1140,now+0.04);
+    const g1=ctx.createGain();
+    g1.gain.setValueAtTime(0.001,now);
+    g1.gain.linearRampToValueAtTime(0.45,now+0.003);
+    g1.gain.exponentialRampToValueAtTime(0.001,now+0.065);
+    const g2=ctx.createGain();
+    g2.gain.setValueAtTime(0.001,now);
+    g2.gain.linearRampToValueAtTime(0.18,now+0.002);
+    g2.gain.exponentialRampToValueAtTime(0.001,now+0.035);
+    osc1.connect(g1);g1.connect(ctx.destination);
+    osc2.connect(g2);g2.connect(ctx.destination);
+    osc1.start(now);osc1.stop(now+0.07);
+    osc2.start(now);osc2.stop(now+0.04);
+  }else if(inst==="Metronome"){
+    const osc=ctx.createOscillator();osc.type="triangle";
+    osc.frequency.setValueAtTime(1600,now);
+    osc.frequency.exponentialRampToValueAtTime(950,now+0.022);
+    const g=ctx.createGain();
+    g.gain.setValueAtTime(0.001,now);
+    g.gain.linearRampToValueAtTime(0.5,now+0.0015);
+    g.gain.exponentialRampToValueAtTime(0.001,now+0.028);
+    osc.connect(g);g.connect(ctx.destination);
+    osc.start(now);osc.stop(now+0.032);
+  }else if(inst==="Triangle"){
+    const partials=[
+      {freq:2420,type:"sine",peak:0.22,decay:0.34},
+      {freq:3890,type:"sine",peak:0.15,decay:0.26},
+      {freq:5640,type:"triangle",peak:0.09,decay:0.18}
+    ];
+    const hp=ctx.createBiquadFilter();
+    hp.type="highpass";
+    hp.frequency.setValueAtTime(1400,now);
+    hp.connect(ctx.destination);
+    partials.forEach(p=>{
+      const osc=ctx.createOscillator();
+      osc.type=p.type;
+      osc.frequency.setValueAtTime(p.freq,now);
+      const g=ctx.createGain();
+      g.gain.setValueAtTime(0.0001,now);
+      g.gain.linearRampToValueAtTime(p.peak,now+0.002);
+      g.gain.exponentialRampToValueAtTime(0.0001,now+p.decay);
+      osc.connect(g);
+      g.connect(hp);
+      osc.start(now);
+      osc.stop(now+p.decay+0.02);
     });
   }else{
     const osc=ctx.createOscillator();osc.type="sine";
@@ -341,7 +386,7 @@ function playSfx(inst){
   }
 }
 const KEY="beatdle.v1";
-const VALID_SFX=["Bass Drum","HH Cymbal","Cow bell"];
+const VALID_SFX=["Bass Drum","HH Cymbal","Woodblock","Metronome","Triangle"];
 let data={games:{},daily:{},sfxEnabled:false,sfxInstrument:"Bass Drum"};
 function syncSfxUi(){
   const on=!!data.sfxEnabled;
