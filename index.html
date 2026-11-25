@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- Beatdle V2.5 -->
+<!-- Beatdle V2.9 -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -14,9 +14,9 @@ box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:en
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:"Bricolage Grotesque",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;min-height:100vh;display:flex;justify-content:center}
-main{width:100%;max-width:440px;padding:20px 20px 32px;text-align:center}
+main{width:100%;max-width:440px;padding:12px 20px 32px;text-align:center}
 [hidden]{display:none!important}
-h1{font-size:2.6rem;line-height:1.05;margin:12vh 0 12px;font-weight:800}
+h1{font-size:2.6rem;line-height:1.05;margin:4px 0 12px;font-weight:800}
 h2{font-size:1.9rem;margin:6px 0 2px;font-weight:800;line-height:1.15}
 p{color:var(--mute);margin:0 0 16px;line-height:1.45}
 .meta{color:var(--mute);font-size:.95rem;margin-top:8px}
@@ -80,9 +80,18 @@ pre{white-space:pre-wrap;word-break:break-all;background:var(--card);border-radi
     <h1>Beatdle</h1>
     <p id="todayinfo" style="margin:0 0 14px"></p>
     <pre id="menushare" hidden></pre>
-    <div class="row" style="flex-wrap:wrap"><button id="go">Today’s game</button><button class="ghost" id="replay" hidden>Replay today’s game</button></div>
+    <div class="row" style="flex-wrap:wrap"><button id="go">Today’s game</button><button id="replay" hidden>Replay today’s game</button></div>
     <h2 style="margin-top:32px;font-size:1.3rem">Archive</h2>
     <div id="archive"></div>
+    <div class="sfxbox" style="margin-top:24px">
+      <div class="sfxrow">
+        <span class="sfxlabel">Dark mode</span>
+        <button type="button" class="swbtn" id="darkToggle" role="switch" aria-checked="false" aria-label="Dark mode">
+          <span class="knob" aria-hidden="true"></span>
+          <span id="darkStateTxt">OFF</span>
+        </button>
+      </div>
+    </div>
   </section>
 
   <section id="play" hidden>
@@ -95,7 +104,7 @@ pre{white-space:pre-wrap;word-break:break-all;background:var(--card);border-radi
       <button id="skip">Skip song</button>
       <button id="lock" disabled>Lock in</button>
     </div>
-    <div class="meta">Tap at least 4 times. You can also press the space bar.</div>
+    <div class="meta" id="taphelp">Tap at least 4 times. You can also press the space bar.</div>
     <div class="sfxbox" id="sfxbox">
       <div class="sfxrow">
         <span class="sfxlabel">Sound effect</span>
@@ -112,7 +121,7 @@ pre{white-space:pre-wrap;word-break:break-all;background:var(--card);border-radi
         <option value="Triangle">Triangle</option>
       </select>
     </div>
-    <div style="margin:2em 0 .4em"><button class="ghost" id="menu">Menu</button></div>
+    <div style="margin:2em 0 .4em"><button id="home">Home</button></div>
   </section>
 
   <section id="reveal" hidden>
@@ -124,14 +133,14 @@ pre{white-space:pre-wrap;word-break:break-all;background:var(--card);border-radi
   </section>
 
   <section id="final" hidden>
-    <h1 style="margin-top:8vh" id="winner"></h1>
+    <h1 style="margin-top:4px" id="winner"></h1>
     <table id="ftable"></table>
     <p id="replaynote" hidden style="margin:-6px 0 16px;font-size:.92rem"></p>
     <h2 id="sharetitle" style="font-size:1.3rem;margin:24px 0 8px"></h2>
     <pre id="share" style="margin-top:0"></pre>
-    <div class="row"><button id="copy" class="sharebtn"><span>Share</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></button></div>
+    <div class="row" style="flex-wrap:wrap"><button id="copy" class="sharebtn"><span>Share</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></button><button id="finalhome">Home</button></div>
     <div id="statsbox"></div>
-    <div style="margin:2.8em 0 .4em"><button class="ghost" id="again">Menu</button></div>
+    
   </section>
 <p class="meta" style="margin-top:36px">Developed by John Hymmen<br>Copyright 2026–2027</p>
 </main>
@@ -233,7 +242,7 @@ const SONGS=[
 ["Paranoid Android","Radiohead",82]
 ];
 const ROUNDS=5;
-let order,round,taps,cur,gameNo,roundPts,total=0,isDaily=false;
+let order,round,taps,cur,gameNo,roundPts,skippedQueue,isRetryPass,activeRoundIdx,total=0,isDaily=false;
 const SITE_URL="https://beatdle.ca";
 const EPOCH=Date.UTC(2026,10,16);
 const $=id=>document.getElementById(id);
@@ -250,12 +259,42 @@ function songsFor(n){
 function todayNo(){const d=new Date();return Math.max(1,1+Math.round((Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())-EPOCH)/86400000))}
 function startGame(n){
   gameNo=n;isDaily=(n===todayNo());total=0;
-  order=songsFor(gameNo);round=0;roundPts=[];
+  order=songsFor(gameNo);round=0;roundPts=[];skippedQueue=[];isRetryPass=false;activeRoundIdx=0;
   nextRound();
 }
+function advanceFlow(){
+  if(!isRetryPass){
+    round++;
+    if(round<ROUNDS){
+      nextRound();
+    }else if(skippedQueue.length){
+      isRetryPass=true;
+      nextRound();
+    }else{
+      finish();
+    }
+  }else{
+    if(skippedQueue.length){
+      nextRound();
+    }else{
+      finish();
+    }
+  }
+}
 function nextRound(){
-  stopAutoTempo();cur=order[round];taps=[];
-  $("rnd").textContent="Game #"+gameNo+", round "+(round+1)+" of "+ROUNDS;
+  stopAutoTempo();
+  if(!isRetryPass){
+    activeRoundIdx=round;
+    $("rnd").textContent="Game #"+gameNo+", round "+(activeRoundIdx+1)+" of "+ROUNDS;
+    $("skip").hidden=false;
+    $("taphelp").textContent="Tap at least 4 times. You can also press the space bar.";
+  }else{
+    activeRoundIdx=skippedQueue.shift();
+    $("rnd").textContent="Game #"+gameNo+", round "+(activeRoundIdx+1)+" of "+ROUNDS+" (second chance)";
+    $("skip").hidden=true;
+    $("taphelp").textContent="You might as well try something!";
+  }
+  cur=order[activeRoundIdx];taps=[];
   $("title").textContent=cur[0];$("artist").textContent=cur[1];
   updatePad();show("play");
 }
@@ -398,6 +437,17 @@ function syncSfxUi(){
   if(st){st.textContent=on?"ON":"OFF"}
   if(sel){sel.value=inst;sel.hidden=!on}
 }
+function resolveDarkMode(savedPref){
+  if(typeof savedPref==="boolean")return savedPref;
+  return !!(window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches);
+}
+function syncDarkUi(){
+  const on=!!data.darkMode;
+  document.documentElement.setAttribute("data-theme",on?"dark":"light");
+  const btn=$("darkToggle"),st=$("darkStateTxt");
+  if(btn){btn.setAttribute("aria-checked",on?"true":"false")}
+  if(st){st.textContent=on?"ON":"OFF"}
+}
 function load(){
   try{
     const r=localStorage.getItem(KEY);
@@ -409,11 +459,14 @@ function load(){
         if(d.daily&&typeof d.daily==="object")Object.keys(d.daily).forEach(k=>{g[k]=d.daily[k]});
         const sfxOn=typeof d.sfxEnabled==="boolean"?d.sfxEnabled:false;
         const sfxInst=VALID_SFX.includes(d.sfxInstrument)?d.sfxInstrument:"Bass Drum";
-        data={games:g,daily:d.daily&&typeof d.daily==="object"?Object.assign({},d.daily):{},sfxEnabled:sfxOn,sfxInstrument:sfxInst};
+        const darkOn=resolveDarkMode(d.darkMode);
+        data={games:g,daily:d.daily&&typeof d.daily==="object"?Object.assign({},d.daily):{},sfxEnabled:sfxOn,sfxInstrument:sfxInst,darkMode:darkOn};
       }
     }
   }catch(e){}
+  if(typeof data.darkMode!=="boolean")data.darkMode=resolveDarkMode(undefined);
   syncSfxUi();
+  syncDarkUi();
 }
 function save(){try{localStorage.setItem(KEY,JSON.stringify(data))}catch(e){}}
 function record(n,daily,total,pts){
@@ -446,39 +499,44 @@ function buildStart(){
   $("replay").hidden=!d;
   buildArchive();
 }
-function showStart(){buildStart();show("start")}
+function showHome(){buildStart();show("start")}
 function lockIn(){
   stopAutoTempo();
   const truth=cur[2],g=Math.round(currentBpm()),r=match(g,truth),e=pct(g,truth),p=points(g,truth);
-  total+=p;roundPts.push(p);
+  roundPts[activeRoundIdx]=p;
+  total=roundPts.reduce((a,b)=>a+(typeof b==="number"?b:0),0);
   $("rtitle").textContent=cur[0]+" — "+cur[1];
   $("truth").textContent=truth;
   $("rtable").innerHTML='<tr><th>Your guess</th><th>Off by</th><th>Points</th></tr><tr class="me '+(p>=80?"high":p>=40?"mid":"low")+'"><td>'+g+(r.m!==1?" ("+{0.25:"¼×",0.5:"½×",2:"2×",4:"4×"}[r.m]+")":"")+"</td><td>"+Math.round(r.off)+" ("+e.toFixed(1)+"%)</td><td>+"+p+"</td></tr>";
-  $("nextbtn").textContent=round+1<ROUNDS?"Next round":"See final scores";
+  const hasMore=(!isRetryPass&&(round+1<ROUNDS||skippedQueue.length>0))||(isRetryPass&&skippedQueue.length>0);
+  $("nextbtn").textContent=hasMore?"Next round":"See final scores";
   show("reveal");
 }
 function finish(){
+  const normPts=roundPts.map(p=>p==="skipped"?0:p);
+  total=normPts.reduce((a,b)=>a+b,0);
   const isFirst=!data.games[gameNo];
-  record(gameNo,isDaily,total,roundPts.slice());
+  record(gameNo,isDaily,total,normPts.slice());
   const firstRec=data.games[gameNo];
-  const sq=p=>p>=80?"🟩":p>=40?"🟨":"🟥";
+  const sq=p=>{const v=p==="skipped"?0:p;return v>=80?"🟩":v>=40?"🟨":"🟥"};
+  const fmt=p=>p==="skipped"?"skipped":p+" "+sq(p);
   $("winner").textContent="Game #"+gameNo+(isFirst?" complete":" replayed");
   if(isFirst){
-    $("ftable").innerHTML="<tr><th>Round</th><th>Score</th></tr>"+roundPts.map((p,i)=>"<tr><td>Round "+(i+1)+"</td><td>"+p+" "+sq(p)+"</td></tr>").join("")+'<tr class="me"><td>Your total</td><td>'+total+"</td></tr>";
+    $("ftable").innerHTML="<tr><th>Round</th><th>Score</th></tr>"+roundPts.map((p,i)=>"<tr><td>Round "+(i+1)+"</td><td>"+fmt(p)+"</td></tr>").join("")+'<tr class="me"><td>Your total</td><td>'+total+"</td></tr>";
     $("replaynote").hidden=true;
     $("replaynote").textContent="";
   }else{
-    const firstPts=Array.isArray(firstRec.pts)&&firstRec.pts.length===ROUNDS?firstRec.pts:roundPts;
+    const firstPts=Array.isArray(firstRec.pts)&&firstRec.pts.length===ROUNDS?firstRec.pts:normPts;
     $("ftable").innerHTML="<tr><th>Round</th><th>Today’s Score</th><th>Replay Score</th></tr>"+roundPts.map((p,i)=>{
       const fp=firstPts[i];
-      return "<tr><td>Round "+(i+1)+"</td><td>"+fp+" "+sq(fp)+"</td><td>"+p+" "+sq(p)+"</td></tr>";
+      return "<tr><td>Round "+(i+1)+"</td><td>"+fmt(fp)+"</td><td>"+fmt(p)+"</td></tr>";
     }).join("")+'<tr class="me"><td>Your total</td><td>'+firstRec.score+"</td><td>"+total+"</td></tr>";
     $("replaynote").textContent="Replay Note: Your first attempt is what counts for stats and sharing. Replays are just for fun.";
     $("replaynote").hidden=false;
   }
   $("sharetitle").textContent=isDaily?"Today’s score":"First attempt score";
   buildStats(isFirst);
-  $("share").textContent=shareText(gameNo,firstRec.score,firstRec.pts||roundPts);
+  $("share").textContent=shareText(gameNo,firstRec.score,firstRec.pts||normPts);
   setBtnLabel($("copy"),"Share");
   show("final");
 }
@@ -508,7 +566,7 @@ async function shareFrom(pre,btn){
   }
 }
 $("copy").onclick=()=>shareFrom($("share"),$("copy"));
-$("menu").onclick=()=>{stopAutoTempo();showStart()};
+$("home").onclick=()=>{stopAutoTempo();showHome()};
 let calY=new Date().getFullYear(),calM=new Date().getMonth();
 function buildArchive(){
   const t=todayNo(),td=new Date(),ty=td.getFullYear(),tm=td.getMonth(),box=$('archive');
@@ -527,8 +585,13 @@ function buildArchive(){
   $('prev').onclick=()=>{calM--;if(calM<0){calM=11;calY--}buildArchive()};
   $('next').onclick=()=>{calM++;if(calM>11){calM=0;calY++}buildArchive()};
 }
-load();if(data.daily[todayNo()])showStart();else startGame(todayNo());
-$("again").onclick=showStart;
+load();if(data.daily[todayNo()])showHome();else startGame(todayNo());
+$("finalhome").onclick=showHome;
+$("darkToggle").onclick=()=>{
+  data.darkMode=!data.darkMode;
+  syncDarkUi();
+  save();
+};
 $("sfxToggle").onclick=()=>{
   data.sfxEnabled=!data.sfxEnabled;
   if(data.sfxEnabled){
@@ -549,13 +612,13 @@ $("pad").addEventListener("pointerdown",e=>{e.preventDefault();tap()});
 $("reset").onclick=()=>{stopAutoTempo();taps=[];updatePad()};
 function skipSong(){
   stopAutoTempo();
-  roundPts.push(0);
-  round++;
-  round<ROUNDS?nextRound():finish();
+  roundPts[activeRoundIdx]="skipped";
+  skippedQueue.push(activeRoundIdx);
+  advanceFlow();
 }
 $("skip").onclick=skipSong;
 $("lock").onclick=lockIn;
-$("nextbtn").onclick=()=>{round++;round<ROUNDS?nextRound():finish()};
+$("nextbtn").onclick=advanceFlow;
 document.addEventListener("keydown",e=>{
   if(e.code==="Space"&&!$("play").hidden){e.preventDefault();if(!e.repeat)tap()}
 });
