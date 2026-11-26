@@ -32,7 +32,7 @@ Billie Jean,Michael Jackson,117
 Stayin' Alive,Bee Gees,104
 Uptown Funk,Mark Ronson ft. Bruno Mars,115
 Smells Like Teen Spirit,Nirvana,117
-Dancing Queen,ABBA.,101
+Dancing Queen,ABBA,101
 Blackbird,The Beatles,94
 Honesty,Billy Joel,72
 Happy,Pharrell Williams,160
@@ -53,28 +53,28 @@ Get Lucky,Daft Punk,116
 Shake It Off,Taylor Swift,160
 Losing My Religion,REM,126
 Burning Down the House,Talking Heads,103
-Umbrella,Rihanna ft. JAY-Z,79
-Old Town Road,Lil Nas X,136
-Single Ladies,Beyoncé,97
-Poker Face,Lady Gaga,119
-Nude,Radiohead,97
+Rasputin,Boney M.,126
+Gangsta's Paradise,Coolio ft. L.V.,80
+Last Nite,The Strokes,105
+Just Like Heaven,The Cure,150
+Street Spirit (Fade Out),Radiohead,69
 Hips Don't Lie,Shakira,100
 Mamma Mia,ABBA,137
 Imagine,John Lennon,76
-Let It Be,The Beatles,72
+Mrs. Robinson,Simon & Garfunkel,92
 Hey Jude,The Beatles,74
 Come Together,The Beatles,82
 Highway to Hell,AC/DC,116
-Enter Sandman,Metallica,123
-Bodysnatchers,Radiohead,142
-Back in Black,AC/DC,94
+Killing in the Name,Rage Against the Machine,88
+Bitter Sweet Symphony,The Verve,86
 Sweet Home Alabama,Lynyrd Skynyrd,98
+Back in Black,AC/DC,94
 Born to Run,Bruce Springsteen,147
 Respect,Aretha Franklin,115
 My Girl,The Temptations,104
 Brown Eyed Girl,Van Morrison,150
 I Gotta Feeling,Black Eyed Peas,128
-Viva la Vida,Coldplay,138
+Parklife,Blur,120
 Call Me Maybe,Carly Rae Jepsen,120
 Clocks,Coldplay,131
 Jigsaw Falling Into Place,Radiohead,125
@@ -83,7 +83,7 @@ Counting Stars,OneRepublic,122
 Sweet Child O' Mine,Guns N' Roses,125
 Someone Like You,Adele,67
 Mr. Blue Sky,Electric Light Orchestra,178
-We Will Rock You,Queen,81
+Hungry Like the Wolf,Duran Duran,128
 Don't Stop Me Now,Queen,156
 Under Pressure,Queen & David Bowie,114
 Let's Dance,David Bowie,115
@@ -92,7 +92,7 @@ In da Club,50 Cent,90
 Gangnam Style,PSY,132
 Jolene,Dolly Parton,111
 Sweet Caroline,Neil Diamond,128
-Style,Taylor Swift,95
+Friday I'm in Love,The Cure,136
 Firework,Katy Perry,124
 Smooth,Santana,116
 Eye of the Tiger,Survivor,109
@@ -101,22 +101,22 @@ Everything in Its Right Place,Radiohead,124
 Boulevard of Broken Dreams,Green Day,83
 Hey There Delilah,Plain White T's,104
 Californication,Red Hot Chili Peppers,96
-Scar Tissue,Red Hot Chili Peppers,88
 Don't Look Back in Anger,Oasis,82
-Song 2,Blur,130
+Wake Me Up Before You Go-Go,Wham!,82
 Reptilia,The Strokes,158
 Do I Wanna Know?,Arctic Monkeys,85
 Plug In Baby,Muse,134
 Idioteque,Radiohead,132
 Beautiful Day,U2,136
 Whole Lotta Love,Led Zeppelin,90
+Scar Tissue,Red Hot Chili Peppers,88
 Paint It Black,The Rolling Stones,160
 Baba O'Riley,The Who,116
 Dreams,Fleetwood Mac,120
 Go Your Own Way,Fleetwood Mac,136
 Free Fallin',Tom Petty,84
 Jump,Van Halen,130
-Dream On,Aerosmith,80
+Cryin',Aerosmith,98
 How to Disappear Completely,Radiohead,82
 Pour Some Sugar on Me,Def Leppard,94
 All Star,Smash Mouth,104
@@ -141,7 +141,7 @@ Pyramid Song,Radiohead,108
 When Doves Cry,Prince,121
 Livin' la Vida Loca,Ricky Martin,178
 Kiss,Prince,112
-Dani California,Red Hot Chili Peppers,96
+Closing Time,Semisonic,92
 Mr. Jones,Counting Crows,142
 Lose Yourself,Eminem,171
 One Week,Barenaked Ladies,113
@@ -183,20 +183,20 @@ Blue Christmas,Elvis Presley,96
 Blister in the Sun,Violent Femmes,180
 Wonderful Christmastime,Paul McCartney,94
 Long Train Runnin',The Doobie Brothers,117
-All I Want for Christmas Is You,Mariah Carey,150
-Last Christmas,Wham!,107
-Rockin' Around the Christmas Tree,Brenda Lee,67
-Jingle Bell Rock,Bobby Helms,122
-Feliz Navidad,José Feliciano,148
-It's the Most Wonderful Time of the Year,Andy Williams,101
-Let It Snow! Let It Snow! Let It Snow!,Dean Martin,134
-White Christmas,Bing Crosby,74
-Sleigh Ride,The Ronettes,92
-Holly Jolly Christmas,Burl Ives,141
-Santa Tell Me,Ariana Grande,192
-Underneath the Tree,Kelly Clarkson,160
-Blue Christmas,Elvis Presley,96
-Wonderful Christmastime,Paul McCartney,94
+Mistletoe,Justin Bieber,
+Driving Home for Christmas,Chris Rea,
+Santa Claus Is Comin' to Town,Bruce Springsteen,
+Merry Xmas Everybody,Slade,
+Happy Xmas (War Is Over),John Lennon & Yoko Ono,
+Silver Bells,Bing Crosby & Carol Richards,
+"Baby, It's Cold Outside",Ella Fitzgerald & Louis Jordan,
+O Holy Night,Mariah Carey,
+Here Comes Santa Claus,Gene Autry,
+Carol of the Bells,Pentatonix,
+Cozy Little Christmas,Katy Perry,
+You Make It Feel Like Christmas,Gwen Stefani ft. Blake Shelton,
+Peace on Earth/Little Drummer Boy,Bing Crosby & David Bowie,
+Jingle Bells,Frank Sinatra,
 Do They Know It's Christmas?,Band Aid,120
 Run Rudolph Run,Chuck Berry,152
 Step Into Christmas,Elton John,124
