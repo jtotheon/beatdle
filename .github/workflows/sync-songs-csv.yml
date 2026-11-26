@@ -1,0 +1,44 @@
+name: Sync songs.csv from Google Sheets
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 6 * * *" # Daily at 06:00 UTC
+
+permissions:
+  contents: write
+
+jobs:
+  sync-csv:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download and normalize songs.csv
+        env:
+          SONGS_CSV_URL: ${{ secrets.SONGS_CSV_URL }}
+        run: |
+          set -euo pipefail
+          curl -fsSL "$SONGS_CSV_URL" -o raw_songs.csv
+          python3 -c '
+          with open("raw_songs.csv", "rb") as f:
+              raw = f.read()
+          text = raw.decode("utf-8-sig").replace("\r\n", "\n").replace("\r", "\n")
+          lines = [line for line in text.split("\n") if line.strip()]
+          with open("songs.csv", "w", encoding="utf-8", newline="\n") as out:
+              out.write("\n".join(lines) + "\n")
+          '
+          rm -f raw_songs.csv
+
+      - name: Commit updated songs.csv
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add songs.csv
+          if git diff --staged --quiet; then
+            echo "No changes to songs.csv"
+          else
+            git commit -m "Sync songs.csv from Google Sheets"
+            git push
+          fi
