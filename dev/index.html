@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<!--
+  Beatdle - Version 3.0 (Dev Build)
+  Daily & Archive Music BPM Guessing Game
+  Includes ./songs.csv loader with built-in SONGS fallback
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Beatdle v3.0 (Dev)</title>
+  <style>
+    :root {
+      --bg: #ffffff;
+      --fg: #111111;
+      --muted: #666666;
+      --border: #dddddd;
+      --card: #f7f7f7;
+      --btn-bg: #111111;
+      --btn-fg: #ffffff;
+      --accent: #1a73e8;
+      --ok: #1b7f3b;
+      --warn: #b45309;
+      --bad: #b91c1c;
+    }
+
+    body.dark {
+      --bg: #111111;
+      --fg: #f4f4f5;
+      --muted: #a1a1aa;
+      --border: #2a2a2e;
+      --card: #1b1b1f;
+      --btn-bg: #ffffff;
+      --btn-fg: #111111;
+      --accent: #60a5fa;
+      --ok: #34d399;
+      --warn: #fbbf24;
+      --bad: #f87171;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 0 16px 32px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--fg);
+      transition: background-color 0.2s ease, color 0.2s ease;
+    }
+
+    .app {
+      max-width: 520px;
+      margin: 0 auto;
+    }
+
+    .screen {
+      display: none;
+    }
+
+    .screen.active {
+      display: block;
+    }
+
+    .home-screen,
+    .results-screen {
+      margin-top: 0;
+      padding-top: 8px;
+    }
+
+    .top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 8px 0 12px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 14px;
+    }
+
+    .brand {
+      font-size: 1.35rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+
+    .badge {
+      font-size: 0.72rem;
+      padding: 2px 7px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      margin-left: 6px;
+      vertical-align: middle;
+    }
+
+    .btn {
+      appearance: none;
+      border: 1px solid var(--btn-bg);
+      background: var(--btn-bg);
+      color: var(--btn-fg);
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 0.92rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      text-decoration: none;
+    }
+
+    .btn.secondary {
+      background: transparent;
+      color: var(--fg);
+      border-color: var(--border);
+    }
+
+    .btn.small {
+      padding: 7px 11px;
+      font-size: 0.82rem;
+    }
+
+    .btn.full {
+      width: 100%;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 12px;
+    }
+
+    .muted {
+      color: var(--muted);
+      font-size: 0.88rem;
+    }
+
+    .song-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin: 4px 0 2px;
+    }
+
+    .song-artist {
+      color: var(--muted);
+      font-size: 0.98rem;
+      margin-bottom: 12px;
+    }
+
+    .guess-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .guess-input {
+      flex: 1;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--fg);
+      font-size: 1rem;
+    }
+
+    .guess-list {
+      margin-top: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .guess-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      font-size: 0.9rem;
+    }
+
+    .status-pill {
+      font-weight: 700;
+      font-size: 0.82rem;
+    }
+
+    .status-ok { color: var(--ok); }
+    .status-warn { color: var(--warn); }
+    .status-bad { color: var(--bad); }
+
+    .archive-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    .day-btn {
+      padding: 8px 4px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--fg);
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .day-btn.active-day {
+      border-color: var(--btn-bg);
+      background: var(--btn-bg);
+      color: var(--btn-fg);
+    }
+
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--card);
+      margin-top: 10px;
+    }
+
+    .round-summary {
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      margin-bottom: 8px;
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <!-- HOME SCREEN -->
+    <section id="homeScreen" class="screen home-screen active">
+      <div class="top-bar">
+        <div>
+          <span class="brand">Beatdle</span>
+          <span class="badge">v3.0 DEV</span>
+        </div>
+        <button class="btn small" onclick="startGame(currentDayIndex)">Play Round</button>
+      </div>
+
+      <div class="card">
+        <div class="muted" id="sourceStatus">Loading song catalog...</div>
+        <div style="margin-top: 10px; display: flex; gap: 8px; flex-wrap: wrap;">
+          <button class="btn full" onclick="startGame(currentDayIndex)">Play Day <span id="homeDayNum">1</span></button>
+        </div>
+      </div>
+
+      <div class="card">
+        <strong>Archive Calendar</strong>
+        <div class="muted">Pick a day to play or revisit</div>
+        <div id="archiveGrid" class="archive-grid"></div>
+      </div>
+
+      <div class="toggle-row">
+        <div>
+          <strong>Dark Mode</strong>
+          <div class="muted" style="font-size: 0.78rem;">Saved automatically on this device</div>
+        </div>
+        <button id="darkToggleBtn" class="btn small secondary" onclick="toggleDarkMode()">Off</button>
+      </div>
+    </section>
+
+    <!-- GAME SCREEN -->
+    <section id="gameScreen" class="screen">
+      <div class="top-bar">
+        <button class="btn small" onclick="showHome()">Home</button>
+        <div><strong>Day <span id="gameDayNum">1</span></strong> · Round <span id="roundNum">1</span>/5</div>
+        <button class="btn small" onclick="replayCurrentDay()">Replay today's game</button>
+      </div>
+
+      <div class="card">
+        <div class="muted">Guess the song's tempo (BPM) within ±3 BPM</div>
+        <div class="song-title" id="songTitle">—</div>
+        <div class="song-artist" id="songArtist">—</div>
+
+        <form id="guessForm" class="guess-row" onsubmit="handleGuess(event)">
+          <input
+            id="bpmInput"
+            class="guess-input"
+            type="number"
+            min="40"
+            max="260"
+            placeholder="Enter BPM (e.g. 120)"
+            required
+          />
+          <button class="btn" type="submit">Guess</button>
+        </form>
+
+        <div id="guessesList" class="guess-list"></div>
+        <div id="roundActions" style="margin-top: 12px; display: none;">
+          <button id="nextRoundBtn" class="btn full" onclick="advanceRound()">Next Song</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- FINAL RESULTS SCREEN -->
+    <section id="resultsScreen" class="screen results-screen">
+      <div class="top-bar">
+        <button class="btn small" onclick="showHome()">Home</button>
+        <strong>Final Results</strong>
+        <button class="btn small" onclick="replayCurrentDay()">Replay today's game</button>
+      </div>
+
+      <div class="card">
+        <div class="song-title" id="finalScoreText">0 / 5</div>
+        <div class="muted" id="finalSubText">Day complete</div>
+        <div id="resultsBreakdown" style="margin-top: 12px;"></div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    // Beatdle v3.0 - Default built-in fallback song catalog ([Title, Artist, BPM])
+    const SONGS = [
+      ["Bohemian Rhapsody", "Queen", 72],
+      ["Billie Jean", "Michael Jackson", 117],
+      ["Smells Like Teen Spirit", "Nirvana", 117],
+      ["Blinding Lights", "The Weeknd", 171],
+      ["Uptown Funk", "Mark Ronson ft. Bruno Mars", 115],
+      ["Hotel California", "Eagles", 75],
+      ["Shape of You", "Ed Sheeran", 96],
+      ["Rolling in the Deep", "Adele", 105],
+      ["Take On Me", "a-ha", 169],
+      ["Superstition", "Stevie Wonder", 94],
+      ["Hey Ya!", "OutKast", 160],
+      ["Dreams", "Fleetwood Mac", 120],
+      ["Levitating", "Dua Lipa", 103],
+      ["Mr. Brightside", "The Killers", 148],
+      ["Seven Nation Army", "The White Stripes", 124],
+      ["Stayin' Alive", "Bee Gees", 104],
+      ["Bad Guy", "Billie Eilish", 135],
+      ["Lose Yourself", "Eminem", 86],
+      ["Wonderwall", "Oasis", 87],
+      ["Dancing Queen", "ABBA", 101],
+      ["Paint It Black", "The Rolling Stones", 162],
+      ["Somebody That I Used to Know", "Gotye ft. Kimbra", 129],
+      ["No Scrubs", "TLC", 93],
+      ["Everlong", "Foo Fighters", 158],
+      ["Crazy in Love", "Beyoncé ft. Jay-Z", 99],
+      ["Africa", "Toto", 93],
+      ["Espresso", "Sabrina Carpenter", 104],
+      ["Good 4 U", "Olivia Rodrigo", 164],
+      ["Enter Sandman", "Metallica", 123],
+      ["Walking on Sunshine", "Katrina and the Waves", 110]
+    ];
+
+    const STORAGE_KEY = "beatdle.v1";
+    const MAX_ATTEMPTS = 5;
+    const ROUNDS_PER_GAME = 5;
+
+    let activeSongs = SONGS.slice();
+    let currentDayIndex = 0;
+    let roundIndex = 0;
+    let attempts = [];
+    let roundResults = [];
+    let roundComplete = false;
+
+    function loadState() {
+      try {
+        return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+      } catch (e) {
+        return {};
+      }
+    }
+
+    function saveState(patch) {
+      const current = loadState();
+      const next = Object.assign({}, current, patch);
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      } catch (e) {}
+      return next;
+    }
+
+    function applyDarkMode(isDark) {
+      document.body.classList.toggle("dark", Boolean(isDark));
+      const btn = document.getElementById("darkToggleBtn");
+      if (btn) btn.textContent = isDark ? "On" : "Off";
+    }
+
+    function toggleDarkMode() {
+      const state = loadState();
+      const nextDark = !Boolean(state.darkMode);
+      saveState({ darkMode: nextDark });
+      applyDarkMode(nextDark);
+    }
+
+    function parseCsvLine(line) {
+      const cells = [];
+      let cur = "";
+      let inQuotes = false;
+      for (let i = 0; i < line.length; i++) {
+        const ch = line[i];
+        if (ch === '"') {
+          if (inQuotes && line[i + 1] === '"') {
+            cur += '"';
+            i++;
+          } else {
+            inQuotes = !inQuotes;
+          }
+        } else if (ch === "," && !inQuotes) {
+          cells.push(cur.trim());
+          cur = "";
+        } else {
+          cur += ch;
+        }
+      }
+      cells.push(cur.trim());
+      return cells;
+    }
+
+    function parseSongsCsv(text) {
+      const lines = text.replace(/^﻿/, "").split(/?
+/);
+      const parsed = [];
+      for (const line of lines) {
+        if (!line.trim()) continue;
+        const cols = parseCsvLine(line);
+        if (cols.length < 3) continue;
+        const title = cols[0];
+        const artist = cols[1];
+        const bpm = parseInt(cols[2], 10);
+        if (!title || title.toLowerCase() === "title" || title.toLowerCase() === "song") continue;
+        if (!Number.isFinite(bpm) || bpm <= 0) continue;
+        parsed.push([title, artist, bpm]);
+      }
+      return parsed;
+    }
+
+    async function loadSongsFromCsv() {
+      const statusEl = document.getElementById("sourceStatus");
+      try {
+        const res = await fetch("./songs.csv", { cache: "no-store" });
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        const csvText = await res.text();
+        const parsed = parseSongsCsv(csvText);
+        if (parsed.length > 0) {
+          activeSongs = parsed;
+          statusEl.textContent = "Loaded " + activeSongs.length + " songs from ./songs.csv";
+          renderArchive();
+          return;
+        }
+        throw new Error("Empty CSV");
+      } catch (err) {
+        activeSongs = SONGS.slice();
+        statusEl.textContent = "Using built-in v3.0 song list (" + activeSongs.length + " songs)";
+        renderArchive();
+      }
+    }
+
+    function getDaySongs(dayIdx) {
+      const list = [];
+      for (let r = 0; r < ROUNDS_PER_GAME; r++) {
+        const idx = (dayIdx * ROUNDS_PER_GAME + r) % activeSongs.length;
+        list.push(activeSongs[idx]);
+      }
+      return list;
+    }
+
+    function showScreen(id) {
+      document.querySelectorAll(".screen").forEach((el) => el.classList.remove("active"));
+      document.getElementById(id).classList.add("active");
+    }
+
+    function showHome() {
+      document.getElementById("homeDayNum").textContent = currentDayIndex + 1;
+      renderArchive();
+      showScreen("homeScreen");
+    }
+
+    function renderArchive() {
+      const grid = document.getElementById("archiveGrid");
+      if (!grid) return;
+      grid.innerHTML = "";
+      const totalDays = Math.max(10, Math.ceil(activeSongs.length / ROUNDS_PER_GAME));
+      for (let i = 0; i < totalDays; i++) {
+        const btn = document.createElement("button");
+        btn.className = "day-btn" + (i === currentDayIndex ? " active-day" : "");
+        btn.textContent = "D" + (i + 1);
+        btn.onclick = () => {
+          currentDayIndex = i;
+          document.getElementById("homeDayNum").textContent = currentDayIndex + 1;
+          renderArchive();
+        };
+        grid.appendChild(btn);
+      }
+    }
+
+    function startGame(dayIdx) {
+      currentDayIndex = dayIdx;
+      roundIndex = 0;
+      roundResults = [];
+      setupRound();
+      showScreen("gameScreen");
+    }
+
+    function replayCurrentDay() {
+      startGame(currentDayIndex);
+    }
+
+    function setupRound() {
+      attempts = [];
+      roundComplete = false;
+      const daySongs = getDaySongs(currentDayIndex);
+      const currentSong = daySongs[roundIndex];
+      document.getElementById("gameDayNum").textContent = currentDayIndex + 1;
+      document.getElementById("roundNum").textContent = roundIndex + 1;
+      document.getElementById("songTitle").textContent = currentSong[0];
+      document.getElementById("songArtist").textContent = currentSong[1];
+      document.getElementById("guessesList").innerHTML = "";
+      document.getElementById("roundActions").style.display = "none";
+      const input = document.getElementById("bpmInput");
+      input.value = "";
+      input.disabled = false;
+      input.focus();
+    }
+
+    function handleGuess(event) {
+      event.preventDefault();
+      if (roundComplete) return;
+      const input = document.getElementById("bpmInput");
+      const guessVal = parseInt(input.value, 10);
+      if (!Number.isFinite(guessVal)) return;
+
+      const targetBpm = getDaySongs(currentDayIndex)[roundIndex][2];
+      const diff = guessVal - targetBpm;
+      const absDiff = Math.abs(diff);
+
+      let label = absDiff <= 3 ? "Spot on!" : (diff < 0 ? "Too low" : "Too high");
+      let cls = absDiff <= 3 ? "status-ok" : (absDiff <= 10 ? "status-warn" : "status-bad");
+
+      attempts.push({ guess: guessVal, label, cls, solved: absDiff <= 3 });
+      renderGuesses();
+      input.value = "";
+
+      if (absDiff <= 3 || attempts.length >= MAX_ATTEMPTS) {
+        roundComplete = true;
+        input.disabled = true;
+        roundResults.push({
+          song: getDaySongs(currentDayIndex)[roundIndex],
+          solved: absDiff <= 3,
+          tries: attempts.length
+        });
+        const nextBtn = document.getElementById("nextRoundBtn");
+        nextBtn.textContent = (roundIndex + 1 < ROUNDS_PER_GAME) ? "Next Song" : "See Final Results";
+        document.getElementById("roundActions").style.display = "block";
+      }
+    }
+
+    function renderGuesses() {
+      const list = document.getElementById("guessesList");
+      list.innerHTML = "";
+      attempts.forEach((a, i) => {
+        const row = document.createElement("div");
+        row.className = "guess-item";
+        row.innerHTML = "<span>Attempt " + (i + 1) + ": <strong>" + a.guess + " BPM</strong></span><span class='status-pill " + a.cls + "'>" + a.label + "</span>";
+        list.appendChild(row);
+      });
+    }
+
+    function advanceRound() {
+      if (roundIndex + 1 < ROUNDS_PER_GAME) {
+        roundIndex += 1;
+        setupRound();
+      } else {
+        showResults();
+      }
+    }
+
+    function showResults() {
+      const solvedCount = roundResults.filter((r) => r.solved).length;
+      document.getElementById("finalScoreText").textContent = solvedCount + " / " + ROUNDS_PER_GAME + " Solved";
+      document.getElementById("finalSubText").textContent = "Day " + (currentDayIndex + 1) + " · v3.0 Dev";
+
+      const breakdown = document.getElementById("resultsBreakdown");
+      breakdown.innerHTML = "";
+      roundResults.forEach((r, idx) => {
+        const div = document.createElement("div");
+        div.className = "round-summary";
+        const outcome = r.solved ? ("Solved in " + r.tries) : ("Missed (" + r.song[2] + " BPM)");
+        div.innerHTML = "<strong>" + (idx + 1) + ". " + r.song[0] + "</strong> — " + r.song[1] + "<br><span class='muted'>" + outcome + "</span>";
+        breakdown.appendChild(div);
+      });
+
+      showScreen("resultsScreen");
+    }
+
+    (function init() {
+      const saved = loadState();
+      applyDarkMode(Boolean(saved.darkMode));
+      document.getElementById("homeDayNum").textContent = currentDayIndex + 1;
+      renderArchive();
+      loadSongsFromCsv();
+    })();
+  </script>
+</body>
+</html>
