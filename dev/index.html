@@ -298,6 +298,7 @@ const MULTS=[0.25,0.5,1,2,4];
 const match=(g,t)=>{let m=1,best=Infinity;MULTS.forEach(k=>{const d=Math.abs(g/k-t);if(d<best){best=d;m=k}});return{m,off:best}};
 const pct=(g,t)=>Math.round(match(g,t).off/t*100*1e6)/1e6;
 const points=(g,t)=>{const e=pct(g,t);return e<=2?100:e<=5?80:e<=10?50:e<=15?20:0};
+const scoreIcon=p=>{const v=p==="skipped"?0:p;return v>=100?"⭐":v>=80?"🟩":v>=40?"🟨":"🟥"};
 function songsFor(n){
   const len=SONGS.length,start=((Math.max(1,n)-1)*ROUNDS)%len,out=[];
   for(let i=0;i<ROUNDS;i++)out.push(SONGS[(start+i)%len]);
@@ -538,7 +539,7 @@ function buildStats(isFirst){
   }
   $("statsbox").innerHTML=h;
 }
-function shareText(n,t,pts){return "Beatdle #"+n+": "+t+"/"+ROUNDS*100+"\n"+pts.map(p=>p>=80?"🟩":p>=40?"🟨":"🟥").join("")+"\n"+SITE_URL}
+function shareText(n,t,pts){return "Beatdle #"+n+": "+t+"/"+ROUNDS*100+"\n"+pts.map(scoreIcon).join("")+"\n"+SITE_URL}
 function buildStart(){
   const n=todayNo(),d=data.daily[n];
   $("todayinfo").textContent=d?"Game #"+n+" played today: "+d.score+"/500 ✓":"Game #"+n;
@@ -567,8 +568,7 @@ function finish(){
   const isFirst=!data.games[gameNo];
   record(gameNo,isDaily,total,normPts.slice());
   const firstRec=data.games[gameNo];
-  const sq=p=>{const v=p==="skipped"?0:p;return v>=80?"🟩":v>=40?"🟨":"🟥"};
-  const fmt=p=>p==="skipped"?"skipped":p+" "+sq(p);
+  const fmt=p=>p==="skipped"?"skipped":p+" "+scoreIcon(p);
   $("winner").textContent="Game #"+gameNo+(isFirst?" complete":" replayed");
   if(isFirst){
     $("ftable").innerHTML="<tr><th>Round</th><th>Score</th></tr>"+roundPts.map((p,i)=>"<tr><td>Round "+(i+1)+"</td><td>"+fmt(p)+"</td></tr>").join("")+'<tr class="me"><td>Your total</td><td>'+total+"</td></tr>";
