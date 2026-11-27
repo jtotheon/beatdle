@@ -1,10 +1,10 @@
 <!doctype html>
-<!-- Beatdle V3.2 (dev CSV source) -->
+<!-- Beatdle V3.3) -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Beatdle (Dev)</title>
+<title>Beatdle</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700;800&display=swap">
 <style>
 :root{--bg:#eef1ff;--ink:#14173a;--mute:#5a638f;--card:#ffffff;--pad:#ffc414;--padink:#14173a;--ok:#0a8f7a;--bad:#d6334f;
@@ -281,7 +281,7 @@ function parseCsvRows(text){
 }
 async function loadSongsCsv(){
   try{
-    const res=await fetch("../songs.csv?t="+Date.now(),{cache:"no-store"});
+    const res=await fetch("./songs.csv?t="+Date.now(),{cache:"no-store"});
     if(!res.ok)return;
     const txt=await res.text();
     const parsed=parseCsvRows(txt);
