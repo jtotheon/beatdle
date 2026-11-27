@@ -1,10 +1,10 @@
 <!doctype html>
-<!-- Beatdle V2.10 -->
+<!-- Beatdle V3.2 (dev CSV source) -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Beatdle</title>
+<title>Beatdle (Dev)</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700;800&display=swap">
 <style>
 :root{--bg:#eef1ff;--ink:#14173a;--mute:#5a638f;--card:#ffffff;--pad:#ffc414;--padink:#14173a;--ok:#0a8f7a;--bad:#d6334f;
@@ -20,10 +20,12 @@ h1{font-size:2.6rem;line-height:1.05;margin:4px 0 12px;font-weight:800}
 h2{font-size:1.9rem;margin:6px 0 2px;font-weight:800;line-height:1.15}
 p{color:var(--mute);margin:0 0 16px;line-height:1.45}
 .meta{color:var(--mute);font-size:.95rem;margin-top:8px}
+.sublink{color:var(--mute);font-size:.92rem;font-weight:700;text-decoration:none}
+.sublink:hover,.sublink:focus-visible{color:var(--ink);text-decoration:underline}
 button{font:inherit;cursor:pointer;border:0;border-radius:14px;padding:14px 22px;font-weight:700;font-size:1.05rem;background:var(--ink);color:var(--bg)}
 button.ghost{background:transparent;color:var(--mute);font-weight:500}
 button:disabled{opacity:.35;cursor:default}
-button:focus-visible,#pad:focus-visible{outline:3px solid var(--ok);outline-offset:3px}
+button:focus-visible,#pad:focus-visible,.sublink:focus-visible{outline:3px solid var(--ok);outline-offset:3px}
 #pad{display:flex;align-items:center;justify-content:center;margin:22px auto;width:min(72vw,300px);aspect-ratio:1;border-radius:50%;--fill:0%;background:conic-gradient(var(--pad) var(--fill),color-mix(in srgb,var(--pad) 22%,var(--card)) 0);border:3px solid color-mix(in srgb,var(--pad) 55%,transparent);color:var(--ink);font-size:1.6rem;font-weight:800;letter-spacing:.04em;touch-action:manipulation;user-select:none;-webkit-user-select:none;transition:transform .08s,color .12s}
 #pad.filled{color:var(--padink)}
 #pad.hit{transform:scale(.94)}
@@ -32,6 +34,8 @@ button:focus-visible,#pad:focus-visible{outline:3px solid var(--ok);outline-offs
 .sharebtn{display:inline-flex;align-items:center;justify-content:center;gap:8px}
 .sharebtn svg{width:18px;height:18px;flex:none}
 .row{display:flex;gap:10px;justify-content:center}
+/* V3.2: Centered action row for second-chance "Skip for good" button */
+.second-chance-skip{display:flex;justify-content:center;margin:12px 0 4px}
 .truth{font-size:5rem;font-weight:800;line-height:1;margin:14px 0 2px;color:var(--ok)}
 table{width:100%;border-collapse:collapse;margin:18px 0;text-align:left}
 td,th{padding:10px 8px;border-bottom:1px solid color-mix(in srgb,var(--mute) 30%,transparent);font-weight:500}
@@ -92,6 +96,7 @@ pre{white-space:pre-wrap;word-break:break-all;background:var(--card);border-radi
         </button>
       </div>
     </div>
+    <p class="meta" style="margin-top:18px"><a class="sublink" href="/scoring/">How scoring works</a></p>
   </section>
 
   <section id="play" hidden>
@@ -101,8 +106,13 @@ pre{white-space:pre-wrap;word-break:break-all;background:var(--card);border-radi
     <button id="pad" aria-label="Tap the beat"><span id="padtxt"><span class="prompt">Tap your tempo guess here!</span></span></button>
     <div class="row" style="flex-wrap:wrap">
       <button id="reset">Start over</button>
-      <button id="skip">Skip song</button>
+      <!-- V3.2: First-round Pass button -->
+      <button id="skip">Pass</button>
       <button id="lock" disabled>Lock in</button>
+    </div>
+    <!-- V3.2: Second-chance centered Skip for good button -->
+    <div class="second-chance-skip" id="skipGoodWrap" hidden>
+      <button type="button" id="skipGood">Skip for good</button>
     </div>
     <div class="meta" id="taphelp">Tap at least 4 times. You can also press the space bar.</div>
     <div class="sfxbox" id="sfxbox">
@@ -140,12 +150,12 @@ pre{white-space:pre-wrap;word-break:break-all;background:var(--card);border-radi
     <pre id="share" style="margin-top:0"></pre>
     <div class="row" style="flex-wrap:wrap"><button id="copy" class="sharebtn"><span>Share</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></button><button id="finalhome">Home</button></div>
     <div id="statsbox"></div>
-    
+    <p class="meta" style="margin-top:24px"><a class="sublink" href="/scoring/">How scoring works</a></p>
   </section>
 <p class="meta" style="margin-top:36px">Developed by John Hymmen<br>Copyright 2026–2027</p>
 </main>
 <script>
-const SONGS=[
+const FALLBACK_SONGS=[
 ["Party Rock Anthem","LMFAO",130],["Flowers","Miley Cyrus",118],["No Surprises","Radiohead",77],
 ["Since U Been Gone","Kelly Clarkson",131],["Karma Police","Radiohead",76],["Last Nite","The Strokes",105],
 ["Crazy in Love","Beyoncé",99],["Creep","Radiohead",92],["Since U Been Gone","Kelly Clarkson",131],
@@ -241,6 +251,43 @@ const SONGS=[
 ["Sultans of Swing","Dire Straits",148],["Money for Nothing","Dire Straits",134],["Barracuda","Heart",136],
 ["Paranoid Android","Radiohead",82]
 ];
+let SONGS=FALLBACK_SONGS.slice();
+function parseCsvRows(text){
+  const clean=text.replace(/^\uFEFF/,"").replace(/\r\n/g,"\n").replace(/\r/g,"\n");
+  const rows=[],row=[];
+  let val="",inQuotes=false;
+  for(let i=0;i<clean.length;i++){
+    const ch=clean[i],next=clean[i+1];
+    if(inQuotes){
+      if(ch==='"'&&next==='"'){val+='"';i++;}
+      else if(ch==='"'){inQuotes=false;}
+      else{val+=ch;}
+    }else if(ch==='"'){inQuotes=true;}
+    else if(ch===','){row.push(val);val="";}
+    else if(ch==='\n'){row.push(val);rows.push(row.slice());row.length=0;val="";}
+    else{val+=ch;}
+  }
+  if(val.length||row.length){row.push(val);rows.push(row.slice());}
+  const parsed=[];
+  for(const r of rows){
+    if(r.length<3)continue;
+    const title=String(r[0]||"").trim();
+    const artist=String(r[1]||"").trim();
+    const bpm=Number(String(r[2]||"").trim());
+    if(!title||!artist||!Number.isFinite(bpm)||bpm<=0)continue;
+    parsed.push([title,artist,bpm]);
+  }
+  return parsed;
+}
+async function loadSongsCsv(){
+  try{
+    const res=await fetch("../songs.csv?t="+Date.now(),{cache:"no-store"});
+    if(!res.ok)return;
+    const txt=await res.text();
+    const parsed=parseCsvRows(txt);
+    if(parsed.length>=5)SONGS=parsed;
+  }catch(e){}
+}
 const ROUNDS=5;
 let order,round,taps,cur,gameNo,roundPts,skippedQueue,isRetryPass,activeRoundIdx,total=0,isDaily=false;
 const SITE_URL="https://beatdle.ca";
@@ -251,6 +298,7 @@ const MULTS=[0.25,0.5,1,2,4];
 const match=(g,t)=>{let m=1,best=Infinity;MULTS.forEach(k=>{const d=Math.abs(g/k-t);if(d<best){best=d;m=k}});return{m,off:best}};
 const pct=(g,t)=>Math.round(match(g,t).off/t*100*1e6)/1e6;
 const points=(g,t)=>{const e=pct(g,t);return e<=2?100:e<=5?80:e<=10?50:e<=15?20:0};
+const scoreIcon=p=>{const v=p==="skipped"?0:p;return v>=100?"⭐":v>=80?"🟩":v>=40?"🟨":"🟥"};
 function songsFor(n){
   const len=SONGS.length,start=((Math.max(1,n)-1)*ROUNDS)%len,out=[];
   for(let i=0;i<ROUNDS;i++)out.push(SONGS[(start+i)%len]);
@@ -287,11 +335,13 @@ function nextRound(){
     activeRoundIdx=round;
     $("rnd").textContent="Game #"+gameNo+", round "+(activeRoundIdx+1)+" of "+ROUNDS;
     $("skip").hidden=false;
+    $("skipGoodWrap").hidden=true;
     $("taphelp").textContent="Tap at least 4 times. You can also press the space bar.";
   }else{
     activeRoundIdx=skippedQueue.shift();
     $("rnd").textContent="Game #"+gameNo+", round "+(activeRoundIdx+1)+" of "+ROUNDS+" (second chance)";
     $("skip").hidden=true;
+    $("skipGoodWrap").hidden=false;
     $("taphelp").textContent="You might as well try something!";
   }
   cur=order[activeRoundIdx];taps=[];
@@ -489,7 +539,7 @@ function buildStats(isFirst){
   }
   $("statsbox").innerHTML=h;
 }
-function shareText(n,t,pts){return "Beatdle #"+n+": "+t+"/"+ROUNDS*100+"\n"+pts.map(p=>p>=80?"🟩":p>=40?"🟨":"🟥").join("")+"\n"+SITE_URL}
+function shareText(n,t,pts){return "Beatdle #"+n+": "+t+"/"+ROUNDS*100+"\n"+pts.map(scoreIcon).join("")+"\n"+SITE_URL}
 function buildStart(){
   const n=todayNo(),d=data.daily[n];
   $("todayinfo").textContent=d?"Game #"+n+" played today: "+d.score+"/500 ✓":"Game #"+n;
@@ -518,8 +568,7 @@ function finish(){
   const isFirst=!data.games[gameNo];
   record(gameNo,isDaily,total,normPts.slice());
   const firstRec=data.games[gameNo];
-  const sq=p=>{const v=p==="skipped"?0:p;return v>=80?"🟩":v>=40?"🟨":"🟥"};
-  const fmt=p=>p==="skipped"?"skipped":p+" "+sq(p);
+  const fmt=p=>p==="skipped"?"skipped":p+" "+scoreIcon(p);
   $("winner").textContent="Game #"+gameNo+(isFirst?" complete":" replayed");
   if(isFirst){
     $("ftable").innerHTML="<tr><th>Round</th><th>Score</th></tr>"+roundPts.map((p,i)=>"<tr><td>Round "+(i+1)+"</td><td>"+fmt(p)+"</td></tr>").join("")+'<tr class="me"><td>Your total</td><td>'+total+"</td></tr>";
@@ -585,7 +634,11 @@ function buildArchive(){
   $('prev').onclick=()=>{calM--;if(calM<0){calM=11;calY--}buildArchive()};
   $('next').onclick=()=>{calM++;if(calM>11){calM=0;calY++}buildArchive()};
 }
-load();if(data.daily[todayNo()])showHome();else startGame(todayNo());
+load();
+(async function init(){
+  await loadSongsCsv();
+  if(data.daily[todayNo()])showHome();else startGame(todayNo());
+})();
 $("finalhome").onclick=showHome;
 $("darkToggle").onclick=()=>{
   data.darkMode=!data.darkMode;
@@ -616,7 +669,14 @@ function skipSong(){
   skippedQueue.push(activeRoundIdx);
   advanceFlow();
 }
+// V3.2: Permanently skip on second-chance screen without re-queuing
+function skipForGood(){
+  stopAutoTempo();
+  roundPts[activeRoundIdx]="skipped";
+  advanceFlow();
+}
 $("skip").onclick=skipSong;
+$("skipGood").onclick=skipForGood;
 $("lock").onclick=lockIn;
 $("nextbtn").onclick=advanceFlow;
 document.addEventListener("keydown",e=>{
