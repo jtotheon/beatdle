@@ -85,7 +85,6 @@ pre{white-space:pre-wrap;word-break:break-all;background:var(--card);border-radi
     <p id="todayinfo" style="margin:0 0 14px"></p>
     <pre id="menushare" hidden></pre>
     <div class="row" style="flex-wrap:wrap"><button id="go">Today’s game</button><button id="replay" hidden>Replay today’s game</button></div>
-    <p class="meta" style="margin-top:12px"><a class="sublink" href="/scoring/">How scoring works</a></p>
     <h2 style="margin-top:32px;font-size:1.3rem">Archive</h2>
     <div id="archive"></div>
     <div class="sfxbox" style="margin-top:24px">
@@ -97,6 +96,7 @@ pre{white-space:pre-wrap;word-break:break-all;background:var(--card);border-radi
         </button>
       </div>
     </div>
+    <p class="meta" style="margin-top:18px"><a class="sublink" href="/scoring/">How scoring works</a></p>
   </section>
 
   <section id="play" hidden>
@@ -150,6 +150,7 @@ pre{white-space:pre-wrap;word-break:break-all;background:var(--card);border-radi
     <pre id="share" style="margin-top:0"></pre>
     <div class="row" style="flex-wrap:wrap"><button id="copy" class="sharebtn"><span>Share</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></button><button id="finalhome">Home</button></div>
     <div id="statsbox"></div>
+    <p class="meta" style="margin-top:24px"><a class="sublink" href="/scoring/">How scoring works</a></p>
   </section>
 <p class="meta" style="margin-top:36px">Developed by John Hymmen<br>Copyright 2026–2027</p>
 </main>
@@ -252,7 +253,10 @@ const FALLBACK_SONGS=[
 ];
 let SONGS=FALLBACK_SONGS.slice();
 function parseCsvRows(text){
-  const clean=text.replace(/^\uFEFF/,"").replace(/\r\n/g,"\n").replace(/\r/g,"\n");
+  const clean=text.replace(/^﻿/,"").replace(/
+/g,"
+").replace(//g,"
+");
   const rows=[],row=[];
   let val="",inQuotes=false;
   for(let i=0;i<clean.length;i++){
@@ -263,7 +267,8 @@ function parseCsvRows(text){
       else{val+=ch;}
     }else if(ch==='"'){inQuotes=true;}
     else if(ch===','){row.push(val);val="";}
-    else if(ch==='\n'){row.push(val);rows.push(row.slice());row.length=0;val="";}
+    else if(ch==='
+'){row.push(val);rows.push(row.slice());row.length=0;val="";}
     else{val+=ch;}
   }
   if(val.length||row.length){row.push(val);rows.push(row.slice());}
@@ -537,7 +542,9 @@ function buildStats(isFirst){
   }
   $("statsbox").innerHTML=h;
 }
-function shareText(n,t,pts){return "Beatdle #"+n+": "+t+"/"+ROUNDS*100+"\n"+pts.map(p=>p>=80?"🟩":p>=40?"🟨":"🟥").join("")+"\n"+SITE_URL}
+function shareText(n,t,pts){return "Beatdle #"+n+": "+t+"/"+ROUNDS*100+"
+"+pts.map(p=>p>=80?"🟩":p>=40?"🟨":"🟥").join("")+"
+"+SITE_URL}
 function buildStart(){
   const n=todayNo(),d=data.daily[n];
   $("todayinfo").textContent=d?"Game #"+n+" played today: "+d.score+"/500 ✓":"Game #"+n;
@@ -620,7 +627,7 @@ function buildArchive(){
   const t=todayNo(),td=new Date(),ty=td.getFullYear(),tm=td.getMonth(),box=$('archive');
   const first=new Date(calY,calM,1),days=new Date(calY,calM+1,0).getDate();
   const canPrev=calY*12+calM>2026*12+10,canNext=calY*12+calM<ty*12+tm;
-  let h='<div class="calhead"><button class="ghost" id="prev"'+(canPrev?'':' disabled')+' aria-label="Previous month">\u2039</button><b>'+first.toLocaleDateString(undefined,{month:'long',year:'numeric'})+'</b><button class="ghost" id="next"'+(canNext?'':' disabled')+' aria-label="Next month">\u203a</button></div><div class="cal">';
+  let h='<div class="calhead"><button class="ghost" id="prev"'+(canPrev?'':' disabled')+' aria-label="Previous month">‹</button><b>'+first.toLocaleDateString(undefined,{month:'long',year:'numeric'})+'</b><button class="ghost" id="next"'+(canNext?'':' disabled')+' aria-label="Next month">›</button></div><div class="cal">';
   'SMTWTFS'.split('').forEach(d=>h+='<i>'+d+'</i>');
   for(let i=0;i<first.getDay();i++)h+='<span></span>';
   for(let d=1;d<=days;d++){
