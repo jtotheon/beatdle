@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Beatdle — Scoring Guide</title>
+  <style>
+    :root {
+      --bg: #0f1226;
+      --card: #181c38;
+      --text: #f4f6ff;
+      --muted: #b6bddb;
+      --border: rgba(255, 255, 255, 0.12);
+      --accent: #56b870;
+    }
+    body {
+      margin: 0;
+      padding: 24px 16px 48px;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+    }
+    .wrap {
+      max-width: 860px;
+      margin: 0 auto;
+    }
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    a {
+      color: #8ce0a3;
+      text-decoration: none;
+      font-weight: 600;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    h1, h2 {
+      margin-top: 0;
+    }
+    p {
+      color: var(--muted);
+    }
+    .table-wrap {
+      overflow-x: auto;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.95rem;
+    }
+    th, td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+      text-align: left;
+    }
+    th {
+      color: var(--text);
+      font-weight: 700;
+    }
+    td {
+      color: var(--muted);
+    }
+    .heatmap-img {
+      width: 100%;
+      height: auto;
+      display: block;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+    }
+    .caption {
+      font-size: 0.88rem;
+      color: var(--muted);
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top-bar">
+      <a href="../">← Back to Beatdle (Dev)</a>
+      <span>Scoring Rules</span>
+    </div>
+
+    <div class="card">
+      <h1>How Beatdle Scoring Works</h1>
+      <p>
+        Each of the 5 rounds is worth up to <strong>100 points</strong> (500 points max per game).
+        Points are based on your <strong>percentage error</strong> from the song's actual BPM, after
+        checking octave and tempo multipliers (<strong>0.25×, 0.5×, 1×, 2×, 4×</strong>). Because the
+        windows are percentage-based, slower songs have tighter BPM margins than faster songs.
+      </p>
+    </div>
+
+    <div class="card">
+      <h2>Points &amp; BPM Examples (1× Match)</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Error Range</th>
+              <th>Points</th>
+              <th>Share</th>
+              <th>80 BPM</th>
+              <th>120 BPM</th>
+              <th>140 BPM</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>0% – 2%</td>
+              <td><strong>100</strong></td>
+              <td>🟩</td>
+              <td>78 – 82 BPM</td>
+              <td>118 – 122 BPM</td>
+              <td>137 – 143 BPM</td>
+            </tr>
+            <tr>
+              <td>&gt; 2% – 5%</td>
+              <td><strong>80</strong></td>
+              <td>🟩</td>
+              <td>76–77 or 83–84</td>
+              <td>114–117 or 123–126</td>
+              <td>133–136 or 144–147</td>
+            </tr>
+            <tr>
+              <td>&gt; 5% – 10%</td>
+              <td><strong>50</strong></td>
+              <td>🟨</td>
+              <td>72–75 or 85–88</td>
+              <td>108–113 or 127–132</td>
+              <td>126–132 or 148–154</td>
+            </tr>
+            <tr>
+              <td>&gt; 10% – 15%</td>
+              <td><strong>20</strong></td>
+              <td>🟨</td>
+              <td>68–71 or 89–92</td>
+              <td>102–107 or 133–138</td>
+              <td>119–125 or 155–161</td>
+            </tr>
+            <tr>
+              <td>&gt; 15%</td>
+              <td><strong>0</strong></td>
+              <td>🟥</td>
+              <td>&lt; 68 or &gt; 92</td>
+              <td>&lt; 102 or &gt; 138</td>
+              <td>&lt; 119 or &gt; 161</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Tempo Heatmap</h2>
+      <img class="heatmap-img" src="scoring-heatmap.png" alt="Beatdle scoring heatmap by song tempo and guessed tempo" />
+      <p class="caption">
+        Actual song tempo is on the horizontal axis and tapped tempo is on the vertical axis, with
+        20-BPM grid lines and BPM deltas shown to 0.1 precision at each scoring boundary.
+      </p>
+    </div>
+  </div>
+</body>
+</html>
