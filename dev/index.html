@@ -85,7 +85,7 @@ pre{white-space:pre-wrap;word-break:break-all;background:var(--card);border-radi
     <p id="todayinfo" style="margin:0 0 14px"></p>
     <pre id="menushare" hidden></pre>
     <div class="row" style="flex-wrap:wrap"><button id="go">Today’s game</button><button id="replay" hidden>Replay today’s game</button></div>
-    <p class="meta" style="margin-top:12px"><a class="sublink" href="scoring/">How scoring works</a></p>
+    <p class="meta" style="margin-top:12px"><a class="sublink" href="/scoring/">How scoring works</a></p>
     <h2 style="margin-top:32px;font-size:1.3rem">Archive</h2>
     <div id="archive"></div>
     <div class="sfxbox" style="margin-top:24px">
@@ -506,4 +506,183 @@ function load(){
         if(d.archive&&typeof d.archive==="object")Object.keys(d.archive).forEach(k=>{if(!g[k])g[k]=d.archive[k]});
         if(d.daily&&typeof d.daily==="object")Object.keys(d.daily).forEach(k=>{g[k]=d.daily[k]});
         const sfxOn=typeof d.sfxEnabled==="boolean"?d.sfxEnabled:false;
-        const sfxInst=VALID_SFX.includes(d.sfxInstrument)?d.
+        const sfxInst=VALID_SFX.includes(d.sfxInstrument)?d.sfxInstrument:"Bass Drum";
+        const darkOn=resolveDarkMode(d.darkMode);
+        data={games:g,daily:d.daily&&typeof d.daily==="object"?Object.assign({},d.daily):{},sfxEnabled:sfxOn,sfxInstrument:sfxInst,darkMode:darkOn};
+      }
+    }
+  }catch(e){}
+  if(typeof data.darkMode!=="boolean")data.darkMode=resolveDarkMode(undefined);
+  syncSfxUi();
+  syncDarkUi();
+}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(data))}catch(e){}}
+function record(n,daily,total,pts){
+  if(!data.games[n])data.games[n]={score:total,pts:pts};
+  if(daily&&!data.daily[n])data.daily[n]={score:total,pts:pts};
+  save();
+}
+function played(n){return data.games[n]||null}
+function streak(){let n=todayNo();if(!data.daily[n])n--;let c=0;while(n>=1&&data.daily[n]){c++;n--}return c}
+function allStats(){const ks=Object.keys(data.games),b=[0,0,0,0,0];let sum=0,best=0;ks.forEach(k=>{const v=data.games[k].score;sum+=v;if(v>best)best=v;b[Math.min(4,Math.floor(v/100))]++});return{count:ks.length,avg:ks.length?Math.round(sum/ks.length):0,best:best,dist:b}}
+function buildStats(isFirst){
+  const s=allStats(),labels=["0–99","100–199","200–299","300–399","400–500"];
+  let h='<h2 style="font-size:1.3rem;margin:26px 0 8px">Stats</h2>';
+  if(!s.count)h+='<p>Stats appear once you finish a game.</p>';
+  else{
+    const mx=Math.max(...s.dist),rec=data.games[gameNo],hi=rec?Math.min(4,Math.floor(rec.score/100)):-1;
+    h+='<div class="stats"><div class="stat"><b>'+streak()+'</b><span>Daily streak</span></div><div class="stat"><b>'+s.avg+'</b><span>Average score</span></div><div class="stat"><b>'+s.best+'</b><span>Best score</span></div></div><div class="dist">';
+    s.dist.forEach((c,i)=>{h+='<span>'+labels[i]+'</span>'+(c?'<div class="bar'+(i===hi?' hi':'')+'" style="width:'+Math.max(8,Math.round(100*c/mx))+'%">'+c+'</div>':'<span>0</span>')});
+    h+='</div>';
+  }
+  $("statsbox").innerHTML=h;
+}
+function shareText(n,t,pts){return "Beatdle #"+n+": "+t+"/"+ROUNDS*100+"\n"+pts.map(p=>p>=80?"🟩":p>=40?"🟨":"🟥").join("")+"\n"+SITE_URL}
+function buildStart(){
+  const n=todayNo(),d=data.daily[n];
+  $("todayinfo").textContent=d?"Game #"+n+" played today: "+d.score+"/500 ✓":"Game #"+n;
+  $("menushare").hidden=!d;
+  if(d)$("menushare").textContent=shareText(n,d.score,d.pts||[]);
+  $("go").textContent=d?"Share today’s score":"Today’s game";
+  $("replay").hidden=!d;
+  buildArchive();
+}
+function showHome(){buildStart();show("start")}
+function lockIn(){
+  stopAutoTempo();
+  const truth=cur[2],g=Math.round(currentBpm()),r=match(g,truth),e=pct(g,truth),p=points(g,truth);
+  roundPts[activeRoundIdx]=p;
+  total=roundPts.reduce((a,b)=>a+(typeof b==="number"?b:0),0);
+  $("rtitle").textContent=cur[0]+" — "+cur[1];
+  $("truth").textContent=truth;
+  $("rtable").innerHTML='<tr><th>Your guess</th><th>Off by</th><th>Points</th></tr><tr class="me '+(p>=80?"high":p>=40?"mid":"low")+'"><td>'+g+(r.m!==1?" ("+{0.25:"¼×",0.5:"½×",2:"2×",4:"4×"}[r.m]+")":"")+"</td><td>"+Math.round(r.off)+" ("+e.toFixed(1)+"%)</td><td>+"+p+"</td></tr>";
+  const hasMore=(!isRetryPass&&(round+1<ROUNDS||skippedQueue.length>0))||(isRetryPass&&skippedQueue.length>0);
+  $("nextbtn").textContent=hasMore?"Next round":"See final scores";
+  show("reveal");
+}
+function finish(){
+  const normPts=roundPts.map(p=>p==="skipped"?0:p);
+  total=normPts.reduce((a,b)=>a+b,0);
+  const isFirst=!data.games[gameNo];
+  record(gameNo,isDaily,total,normPts.slice());
+  const firstRec=data.games[gameNo];
+  const sq=p=>{const v=p==="skipped"?0:p;return v>=80?"🟩":v>=40?"🟨":"🟥"};
+  const fmt=p=>p==="skipped"?"skipped":p+" "+sq(p);
+  $("winner").textContent="Game #"+gameNo+(isFirst?" complete":" replayed");
+  if(isFirst){
+    $("ftable").innerHTML="<tr><th>Round</th><th>Score</th></tr>"+roundPts.map((p,i)=>"<tr><td>Round "+(i+1)+"</td><td>"+fmt(p)+"</td></tr>").join("")+'<tr class="me"><td>Your total</td><td>'+total+"</td></tr>";
+    $("replaynote").hidden=true;
+    $("replaynote").textContent="";
+  }else{
+    const firstPts=Array.isArray(firstRec.pts)&&firstRec.pts.length===ROUNDS?firstRec.pts:normPts;
+    $("ftable").innerHTML="<tr><th>Round</th><th>Today’s Score</th><th>Replay Score</th></tr>"+roundPts.map((p,i)=>{
+      const fp=firstPts[i];
+      return "<tr><td>Round "+(i+1)+"</td><td>"+fmt(fp)+"</td><td>"+fmt(p)+"</td></tr>";
+    }).join("")+'<tr class="me"><td>Your total</td><td>'+firstRec.score+"</td><td>"+total+"</td></tr>";
+    $("replaynote").textContent="Replay Note: Your first attempt is what counts for stats and sharing. Replays are just for fun.";
+    $("replaynote").hidden=false;
+  }
+  $("sharetitle").textContent=isDaily?"Today’s score":"First attempt score";
+  buildStats(isFirst);
+  $("share").textContent=shareText(gameNo,firstRec.score,firstRec.pts||normPts);
+  setBtnLabel($("copy"),"Share");
+  show("final");
+}
+function setBtnLabel(btn,txt){const s=btn.querySelector("span");if(s)s.textContent=txt;else btn.textContent=txt}
+$("go").onclick=()=>{if(data.daily[todayNo()])shareFrom($("menushare"),$("go"));else startGame(todayNo())};
+$("replay").onclick=()=>startGame(todayNo());
+
+function isDesktopOrLaptop(){
+  const mobileUa=/Android|iPhone|iPad|iPod|Mobi/i.test(navigator.userAgent||"");
+  const hasFineHover=window.matchMedia&&window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+  return !mobileUa && !!hasFineHover;
+}
+async function shareFrom(pre,btn){
+  const t=pre.textContent;
+  if(!isDesktopOrLaptop()&&navigator.share){
+    try{await navigator.share({text:t});return}catch(e){if(e&&e.name==="AbortError")return}
+  }
+  const orig=btn.querySelector("span")?btn.querySelector("span").textContent:btn.textContent;
+  try{
+    await navigator.clipboard.writeText(t);
+    setBtnLabel(btn,"Copied");
+    setTimeout(()=>setBtnLabel(btn,orig),2000);
+  }catch(e){
+    const r=document.createRange();r.selectNodeContents(pre);const g=getSelection();g.removeAllRanges();g.addRange(r);
+    let ok=false;try{ok=document.execCommand("copy")}catch(e2){}
+    setBtnLabel(btn,ok?"Copied":"Select and copy the text above");
+  }
+}
+$("copy").onclick=()=>shareFrom($("share"),$("copy"));
+$("home").onclick=()=>{stopAutoTempo();showHome()};
+let calY=new Date().getFullYear(),calM=new Date().getMonth();
+function buildArchive(){
+  const t=todayNo(),td=new Date(),ty=td.getFullYear(),tm=td.getMonth(),box=$('archive');
+  const first=new Date(calY,calM,1),days=new Date(calY,calM+1,0).getDate();
+  const canPrev=calY*12+calM>2026*12+10,canNext=calY*12+calM<ty*12+tm;
+  let h='<div class="calhead"><button class="ghost" id="prev"'+(canPrev?'':' disabled')+' aria-label="Previous month">\u2039</button><b>'+first.toLocaleDateString(undefined,{month:'long',year:'numeric'})+'</b><button class="ghost" id="next"'+(canNext?'':' disabled')+' aria-label="Next month">\u203a</button></div><div class="cal">';
+  'SMTWTFS'.split('').forEach(d=>h+='<i>'+d+'</i>');
+  for(let i=0;i<first.getDay();i++)h+='<span></span>';
+  for(let d=1;d<=days;d++){
+    const n=1+Math.round((Date.UTC(calY,calM,d)-EPOCH)/86400000);
+    const pl=(n>=1&&n<=t)?played(n):null,cl=[n===t?'today':'',pl?'played':''].filter(Boolean).join(' ');
+    h+=(n>=1&&n<=t)?'<button data-n="'+n+'"'+(cl?' class="'+cl+'"':'')+'>'+d+'<small>'+(pl?'✓ '+pl.score:'#'+n)+'</small></button>':'<span class="off">'+d+'</span>';
+  }
+  box.innerHTML=h+'</div>';
+  box.querySelectorAll('button[data-n]').forEach(b=>b.onclick=()=>startGame(+b.dataset.n));
+  $('prev').onclick=()=>{calM--;if(calM<0){calM=11;calY--}buildArchive()};
+  $('next').onclick=()=>{calM++;if(calM>11){calM=0;calY++}buildArchive()};
+}
+load();
+(async function init(){
+  await loadSongsCsv();
+  if(data.daily[todayNo()])showHome();else startGame(todayNo());
+})();
+$("finalhome").onclick=showHome;
+$("darkToggle").onclick=()=>{
+  data.darkMode=!data.darkMode;
+  syncDarkUi();
+  save();
+};
+$("sfxToggle").onclick=()=>{
+  data.sfxEnabled=!data.sfxEnabled;
+  if(data.sfxEnabled){
+    getAudioCtx();
+    if(!$("play").hidden&&currentBpm()&&!autoStartTimer&&!autoBeatTimer)scheduleAutoTempo();
+  }else{
+    stopAutoTempo();
+  }
+  syncSfxUi();
+  save();
+};
+$("sfxInstrument").onchange=()=>{
+  data.sfxInstrument=$("sfxInstrument").value;
+  syncSfxUi();
+  save();
+};
+$("pad").addEventListener("pointerdown",e=>{e.preventDefault();tap()});
+$("reset").onclick=()=>{stopAutoTempo();taps=[];updatePad()};
+function skipSong(){
+  stopAutoTempo();
+  roundPts[activeRoundIdx]="skipped";
+  skippedQueue.push(activeRoundIdx);
+  advanceFlow();
+}
+// V3.2: Permanently skip on second-chance screen without re-queuing
+function skipForGood(){
+  stopAutoTempo();
+  roundPts[activeRoundIdx]="skipped";
+  advanceFlow();
+}
+$("skip").onclick=skipSong;
+$("skipGood").onclick=skipForGood;
+$("lock").onclick=lockIn;
+$("nextbtn").onclick=advanceFlow;
+document.addEventListener("keydown",e=>{
+  if(e.code==="Space"&&!$("play").hidden){e.preventDefault();if(!e.repeat)tap()}
+});
+</script>
+<script data-goatcounter="https://johnbeatdle.goatcounter.com/count"
+            async src="//gc.zgo.at/count.js"></script>
+</body>
+</html>
