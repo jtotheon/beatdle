@@ -1,10 +1,10 @@
 <!doctype html>
-<!-- Beatdle V3.2 (dev CSV source) -->
+<!-- Beatdle V3.3) -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Beatdle (Dev)</title>
+<title>Beatdle</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700;800&display=swap">
 <style>
 :root{--bg:#eef1ff;--ink:#14173a;--mute:#5a638f;--card:#ffffff;--pad:#ffc414;--padink:#14173a;--ok:#0a8f7a;--bad:#d6334f;--tier-gold:#b88200;--tier-green:#159e78;--tier-yellow:#b58900;--tier-orange:#d96216;--tier-red:#c93b4b;
@@ -47,6 +47,10 @@ tr.me.tier-green td{color:var(--tier-green)}
 tr.me.tier-yellow td{color:var(--tier-yellow)}
 tr.me.tier-orange td{color:var(--tier-orange)}
 tr.me.tier-red td{color:var(--tier-red)}
+tr.me.mid td{color:#a86f00}
+tr.me.low td{color:var(--bad)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) tr.me.mid td{color:#ffd23f}}
+:root[data-theme="dark"] tr.me.mid td{color:#ffd23f}
 input{font:inherit;width:9em;padding:12px 14px;border-radius:14px;border:2px solid color-mix(in srgb,var(--mute) 40%,transparent);background:var(--card);color:var(--ink);text-align:center}
 pre{white-space:pre-wrap;word-break:break-all;background:var(--card);border-radius:14px;padding:14px;text-align:left;font:inherit;font-size:.95rem;margin:16px 0}
 .calhead{display:flex;align-items:center;justify-content:space-between;margin:10px 0}
@@ -282,7 +286,7 @@ function parseCsvRows(text){
 }
 async function loadSongsCsv(){
   try{
-    const res=await fetch("../songs.csv?t="+Date.now(),{cache:"no-store"});
+    const res=await fetch("./songs.csv?t="+Date.now(),{cache:"no-store"});
     if(!res.ok)return;
     const txt=await res.text();
     const parsed=parseCsvRows(txt);
