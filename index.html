@@ -1,16 +1,16 @@
 <!doctype html>
-<!-- Beatdle V3.3) -->
+<!-- Beatdle V3.2 (dev CSV source) -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Beatdle</title>
+<title>Beatdle (Dev)</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700;800&display=swap">
 <style>
-:root{--bg:#eef1ff;--ink:#14173a;--mute:#5a638f;--card:#ffffff;--pad:#ffc414;--padink:#14173a;--ok:#0a8f7a;--bad:#d6334f;
+:root{--bg:#eef1ff;--ink:#14173a;--mute:#5a638f;--card:#ffffff;--pad:#ffc414;--padink:#14173a;--ok:#0a8f7a;--bad:#d6334f;--tier-gold:#b88200;--tier-green:#159e78;--tier-yellow:#b58900;--tier-orange:#d96216;--tier-red:#c93b4b;
 box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#101a3d;--ink:#f5f7ff;--mute:#9aa4d8;--card:#1a2552;--pad:#ffd23f;--padink:#101a3d;--ok:#3fe0c5;--bad:#ff7a90;color-scheme:dark}}
-:root[data-theme="dark"]{--bg:#101a3d;--ink:#f5f7ff;--mute:#9aa4d8;--card:#1a2552;--pad:#ffd23f;--padink:#101a3d;--ok:#3fe0c5;--bad:#ff7a90;color-scheme:dark}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#101a3d;--ink:#f5f7ff;--mute:#9aa4d8;--card:#1a2552;--pad:#ffd23f;--padink:#101a3d;--ok:#3fe0c5;--bad:#ff7a90;--tier-gold:#ffd23f;--tier-green:#3fe0c5;--tier-yellow:#ffe66d;--tier-orange:#ff9843;--tier-red:#ff7a90;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#101a3d;--ink:#f5f7ff;--mute:#9aa4d8;--card:#1a2552;--pad:#ffd23f;--padink:#101a3d;--ok:#3fe0c5;--bad:#ff7a90;--tier-gold:#ffd23f;--tier-green:#3fe0c5;--tier-yellow:#ffe66d;--tier-orange:#ff9843;--tier-red:#ff7a90;color-scheme:dark}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:"Bricolage Grotesque",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;min-height:100vh;display:flex;justify-content:center}
@@ -36,16 +36,17 @@ button:focus-visible,#pad:focus-visible,.sublink:focus-visible{outline:3px solid
 .row{display:flex;gap:10px;justify-content:center}
 /* V3.2: Centered action row for second-chance "Skip for good" button */
 .second-chance-skip{display:flex;justify-content:center;margin:12px 0 4px}
-.truth{font-size:5rem;font-weight:800;line-height:1;margin:14px 0 2px;color:var(--ok)}
+.truth{font-size:5rem;font-weight:800;line-height:1;margin:14px 0 2px;color:var(--ink)}
 table{width:100%;border-collapse:collapse;margin:18px 0;text-align:left}
 td,th{padding:10px 8px;border-bottom:1px solid color-mix(in srgb,var(--mute) 30%,transparent);font-weight:500}
 th{color:var(--mute);font-size:.85rem}
 td:nth-child(n+2),th:nth-child(n+2){text-align:right}
 tr.me td{font-weight:800;color:var(--ok)}
-tr.me.mid td{color:#a86f00}
-tr.me.low td{color:var(--bad)}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) tr.me.mid td{color:#ffd23f}}
-:root[data-theme="dark"] tr.me.mid td{color:#ffd23f}
+tr.me.tier-gold td{color:var(--tier-gold)}
+tr.me.tier-green td{color:var(--tier-green)}
+tr.me.tier-yellow td{color:var(--tier-yellow)}
+tr.me.tier-orange td{color:var(--tier-orange)}
+tr.me.tier-red td{color:var(--tier-red)}
 input{font:inherit;width:9em;padding:12px 14px;border-radius:14px;border:2px solid color-mix(in srgb,var(--mute) 40%,transparent);background:var(--card);color:var(--ink);text-align:center}
 pre{white-space:pre-wrap;word-break:break-all;background:var(--card);border-radius:14px;padding:14px;text-align:left;font:inherit;font-size:.95rem;margin:16px 0}
 .calhead{display:flex;align-items:center;justify-content:space-between;margin:10px 0}
@@ -281,7 +282,7 @@ function parseCsvRows(text){
 }
 async function loadSongsCsv(){
   try{
-    const res=await fetch("./songs.csv?t="+Date.now(),{cache:"no-store"});
+    const res=await fetch("../songs.csv?t="+Date.now(),{cache:"no-store"});
     if(!res.ok)return;
     const txt=await res.text();
     const parsed=parseCsvRows(txt);
@@ -298,7 +299,8 @@ const MULTS=[0.25,0.5,1,2,4];
 const match=(g,t)=>{let m=1,best=Infinity;MULTS.forEach(k=>{const d=Math.abs(g/k-t);if(d<best){best=d;m=k}});return{m,off:best}};
 const pct=(g,t)=>Math.round(match(g,t).off/t*100*1e6)/1e6;
 const points=(g,t)=>{const e=pct(g,t);return e<=2?100:e<=5?80:e<=10?50:e<=15?20:0};
-const scoreIcon=p=>{const v=p==="skipped"?0:p;return v>=100?"⭐":v>=80?"🟩":v>=40?"🟨":"🟥"};
+const tierClass=p=>{const v=p==="skipped"?0:p;return v>=100?"tier-gold":v>=80?"tier-green":v>=50?"tier-yellow":v>=20?"tier-orange":"tier-red"};
+const scoreIcon=p=>{const v=p==="skipped"?0:p;return v>=100?"⭐":v>=80?"🟩":v>=50?"🟨":v>=20?"🟧":"🟥"};
 function songsFor(n){
   const len=SONGS.length,start=((Math.max(1,n)-1)*ROUNDS)%len,out=[];
   for(let i=0;i<ROUNDS;i++)out.push(SONGS[(start+i)%len]);
@@ -557,7 +559,7 @@ function lockIn(){
   total=roundPts.reduce((a,b)=>a+(typeof b==="number"?b:0),0);
   $("rtitle").textContent=cur[0]+" — "+cur[1];
   $("truth").textContent=truth;
-  $("rtable").innerHTML='<tr><th>Your guess</th><th>Off by</th><th>Points</th></tr><tr class="me '+(p>=80?"high":p>=40?"mid":"low")+'"><td>'+g+(r.m!==1?" ("+{0.25:"¼×",0.5:"½×",2:"2×",4:"4×"}[r.m]+")":"")+"</td><td>"+Math.round(r.off)+" ("+e.toFixed(1)+"%)</td><td>+"+p+"</td></tr>";
+  $("rtable").innerHTML='<tr><th>Your guess</th><th>Off by</th><th>Points</th></tr><tr class="me '+tierClass(p)+'"><td>'+g+(r.m!==1?" ("+{0.25:"¼×",0.5:"½×",2:"2×",4:"4×"}[r.m]+")":"")+"</td><td>"+Math.round(r.off)+" ("+e.toFixed(1)+"%)</td><td>+"+p+"</td></tr>";
   const hasMore=(!isRetryPass&&(round+1<ROUNDS||skippedQueue.length>0))||(isRetryPass&&skippedQueue.length>0);
   $("nextbtn").textContent=hasMore?"Next round":"See final scores";
   show("reveal");
